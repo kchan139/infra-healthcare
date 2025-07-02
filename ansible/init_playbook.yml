@@ -1,0 +1,166 @@
+---
+- name: Provision Docker Host and Deploy Containerized Hello World Web App
+  hosts: all
+  become: yes
+  gather_facts: yes
+  
+  pre_tasks:
+    - name: Stop and mask automatic update services
+      ansible.builtin.systemd:
+        name: "{{ item }}"
+        state: stopped
+        masked: yes
+      loop:
+        - unattended-upgrades
+        - apt-daily.service
+        - apt-daily.timer
+        - apt-daily-upgrade.service
+        - apt-daily-upgrade.timer
+      ignore_errors: yes
+
+    # - name: Kill any running apt/dpkg processes
+    #   ansible.builtin.shell: |
+    #     pkill -f 'apt|dpkg|unattended-upgrade' || true
+    #     sleep 2
+    #   changed_when: false
+
+    - name: Wait a moment for processes to fully stop
+      ansible.builtin.pause:
+        seconds: 5
+
+    - name: Remove any stale lock files
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - /var/lib/dpkg/lock
+        - /var/lib/dpkg/lock-frontend
+        - /var/cache/apt/archives/lock
+      ignore_errors: yes
+
+  tasks:
+    - name: Update apt cache
+      ansible.builtin.apt:
+        update_cache: yes
+        cache_valid_time: 3600
+        lock_timeout: 300
+      register: apt_update
+      retries: 3
+      delay: 10
+      until: apt_update is succeeded
+
+    # --- Docker Installation ---
+    - name: Install Docker prerequisites + common CLI tools
+      ansible.builtin.apt:
+        name:
+          - apt-transport-https
+          - ca-certificates
+          - curl
+          - gnupg
+          - lsb-release
+          - htop
+          - tree
+          - bat
+        state: present
+        lock_timeout: 300
+      register: apt_prereqs
+      retries: 3
+      delay: 10
+      until: apt_prereqs is succeeded   
+
+    - name: Create directory for Docker GPG key
+      ansible.builtin.file:
+        path: /etc/apt/keyrings
+        state: directory
+        mode: '0755'
+
+    - name: Download Docker GPG key
+      ansible.builtin.get_url:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        dest: /tmp/docker.gpg
+        mode: '0644'
+
+    - name: Add Docker GPG key
+      ansible.builtin.shell: |
+        gpg --dearmor < /tmp/docker.gpg > /etc/apt/keyrings/docker.gpg
+        chmod 644 /etc/apt/keyrings/docker.gpg
+      args:
+        creates: /etc/apt/keyrings/docker.gpg
+
+    - name: Add Docker repository
+      ansible.builtin.apt_repository:
+        repo: "deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu {{ ansible_facts['lsb']['codename'] }} stable"
+        state: present
+        filename: docker
+
+    - name: Install Docker packages
+      ansible.builtin.apt:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - docker-buildx-plugin
+          - docker-compose-plugin
+        state: present
+        update_cache: yes
+        lock_timeout: 300
+      register: apt_docker
+      retries: 3
+      delay: 10
+      until: apt_docker is succeeded
+
+    - name: Start and enable Docker service
+      ansible.builtin.systemd:
+        name: docker
+        state: started
+        enabled: yes
+
+    - name: Add current user to docker group
+      ansible.builtin.user:
+        name: "{{ ansible_user }}"
+        groups: docker
+        append: yes
+      when: ansible_user != 'root'
+
+    # --- Starship Installation ---
+    - name: Download Starship installation script
+      ansible.builtin.get_url:
+        url: https://starship.rs/install.sh
+        dest: /tmp/starship_install.sh
+        mode: '0755'
+
+    - name: Install Starship
+      ansible.builtin.shell: /tmp/starship_install.sh --yes
+      args:
+        creates: /usr/local/bin/starship
+
+    - name: Add Starship to bash profile for all users
+      ansible.builtin.blockinfile:
+        path: /etc/profile.d/starship.sh
+        create: yes
+        mode: '0755'
+        block: |
+          # Initialize Starship prompt
+          if command -v starship >/dev/null 2>&1; then
+            eval "$(starship init bash)"
+          fi
+
+    - name: Add Starship to zsh profile for all users
+      ansible.builtin.blockinfile:
+        path: /etc/zsh/zshrc
+        create: yes
+        mode: '0644'
+        block: |
+          # Initialize Starship prompt
+          if command -v starship >/dev/null 2>&1; then
+            eval "$(starship init zsh)"
+          fi
+      ignore_errors: yes
+
+    - name: Symlink batcat to bat
+      ansible.builtin.file:
+        src: /usr/bin/batcat
+        dest: /usr/local/bin/bat
+        state: link
+      when: ansible_facts['distribution'] == 'Ubuntu'
+
