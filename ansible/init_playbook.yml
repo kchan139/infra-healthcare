@@ -166,6 +166,12 @@
         state: link
       when: ansible_facts['distribution'] == 'Ubuntu'
       
+    - name: Create scripts directory
+      ansible.builtin.file:
+        path: /opt/scripts
+        state: directory
+        mode: '0755'
+
     - name: Copy server management script
       ansible.builtin.copy:
         src: ../scripts/server-mgmt.sh
@@ -174,8 +180,10 @@
         owner: root
         group: root
 
-    - name: Create scripts directory
-      ansible.builtin.file:
-        path: /opt/scripts
-        state: directory
-        mode: '0755'
+    - name: Schedule health-check cron job
+      ansible.builtin.cron:
+        name: "Server health check every 5 minutes"
+        user: root
+        minute: "*/5"
+        job: "/opt/scripts/server-mgmt.sh health >> /var/log/server-health.log 2>&1"
+
