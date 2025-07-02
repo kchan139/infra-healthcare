@@ -61,6 +61,7 @@
           - htop
           - tree
           - bat
+          - neofetch
         state: present
         lock_timeout: 300
       register: apt_prereqs
