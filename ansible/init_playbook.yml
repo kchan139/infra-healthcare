@@ -61,6 +61,7 @@
           - htop
           - tree
           - bat
+          - net-tools
           - neofetch
         state: present
         lock_timeout: 300
@@ -164,4 +165,17 @@
         dest: /usr/local/bin/bat
         state: link
       when: ansible_facts['distribution'] == 'Ubuntu'
+      
+    - name: Copy server management script
+      ansible.builtin.copy:
+        src: ../scripts/server-mgmt.sh
+        dest: /opt/scripts/server-mgmt.sh
+        mode: '0755'
+        owner: root
+        group: root
 
+    - name: Create scripts directory
+      ansible.builtin.file:
+        path: /opt/scripts
+        state: directory
+        mode: '0755'
