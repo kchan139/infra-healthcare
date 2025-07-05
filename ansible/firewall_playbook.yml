@@ -1,0 +1,36 @@
+---
+- name: Configure UFW firewall
+  hosts: app-servers
+  become: true
+
+  vars:
+    ssh_port: 1309
+
+  tasks:
+    - name: Set default incoming policy to deny
+      ansible.builtin.ufw:
+        state: enabled
+        direction: incoming
+        policy: deny
+
+    - name: Set default outgoing policy to allow
+      ansible.builtin.ufw:
+        state: enabled
+        direction: outgoing
+        policy: allow
+
+    - name: Limit SSH rate on custom port
+      ansible.builtin.ufw:
+        rule: limit
+        port: "{{ ssh_port }}"
+        proto: tcp
+
+    - name: Allow HTTP and HTTPS
+      ansible.builtin.ufw:
+        rule: allow
+        port: "80,443"
+        proto: tcp
+
+    - name: Enable UFW
+      ansible.builtin.ufw:
+        state: enabled

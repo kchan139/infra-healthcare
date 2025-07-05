@@ -1,0 +1,87 @@
+---
+- name: Harden SSHD config on app servers
+  hosts: app-servers
+  become: true
+  gather_facts: false
+
+  vars:
+    ssh_port: 1309
+    allow_root: no
+    allow_password_login: no
+    disable_kbd_interactive: no
+    use_pam: yes
+    log_level: VERBOSE
+    client_alive_interval: 300
+    client_alive_count_max: 0
+
+  tasks:
+    - name: Set custom SSH port
+      ansible.builtin.lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^#?Port\s+'
+        line: "Port {{ ssh_port }}"
+        backrefs: yes
+      notify: Reload sshd
+
+    - name: Disable root login
+      ansible.builtin.lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^#?PermitRootLogin\s+'
+        line: "PermitRootLogin {{ allow_root }}"
+        backrefs: yes
+      notify: Reload sshd
+
+    - name: Disable password authentication
+      ansible.builtin.lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^#?PasswordAuthentication\s+'
+        line: "PasswordAuthentication {{ allow_password_login }}"
+        backrefs: yes
+      notify: Reload sshd
+
+    - name: Disable keyboard-interactive authentication
+      ansible.builtin.lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^#?KbdInteractiveAuthentication\s+'
+        line: "KbdInteractiveAuthentication {{ disable_kbd_interactive }}"
+        backrefs: yes
+      notify: Reload sshd
+
+    - name: Ensure PAM is enabled
+      ansible.builtin.lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^#?UsePAM\s+'
+        line: "UsePAM {{ use_pam }}"
+        backrefs: yes
+      notify: Reload sshd
+
+    - name: Set verbose logging
+      ansible.builtin.lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^#?LogLevel\s+'
+        line: "LogLevel {{ log_level }}"
+        backrefs: yes
+      notify: Reload sshd
+
+    - name: Disconnect idle sessions
+      ansible.builtin.lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^#?ClientAliveInterval\s+'
+        line: "ClientAliveInterval {{ client_alive_interval }}"
+        backrefs: yes
+      notify: Reload sshd
+
+    - name: Set max client alive count
+      ansible.builtin.lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: '^#?ClientAliveCountMax\s+'
+        line: "ClientAliveCountMax {{ client_alive_count_max }}"
+        backrefs: yes
+      notify: Reload sshd
+
+  handlers:
+    - name: Reload sshd
+      ansible.builtin.systemd:
+        name: sshd
+        state: reloaded
+        daemon_reload: yes
