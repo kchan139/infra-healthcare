@@ -1,0 +1,49 @@
+server {
+    listen 443 ssl;
+    listen [::]:443 ssl ipv6only=on;
+    server_name droplet.khoa.email;
+
+    ssl_certificate /etc/letsencrypt/live/droplet.khoa.email/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/droplet.khoa.email/privkey.pem;
+    include /etc/letsencrypt/options-ssl-nginx.conf;
+    ssl_dhparam /etc/letsencrypt/ssl-dhparams.pem;
+
+    # Entry
+    location / {
+        proxy_pass http://localhost:8000/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+
+    # Test Service (will be removed later)
+    location /api/rmbg/ {
+        rewrite ^/api/rmbg/(.*)$ /$1 break;
+        proxy_pass http://localhost:12345/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+
+    # IAM Microservice
+    location /api/iam/ {
+        rewrite ^/api/iam/(.*)$ /$1 break;
+        proxy_pass http://localhost:8080/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+
+    # Patient Microservice
+    location /api/patient/ {
+        rewrite ^/api/patient/(.*)$ /$1 break;
+        proxy_pass http://localhost:8081/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+
+    # Test Order Microservice
+    location /api/testorder/ {
+        rewrite ^/api/testorder/(.*)$ /$1 break;
+        proxy_pass http://localhost:8082/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+}
