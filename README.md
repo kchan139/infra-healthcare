@@ -21,12 +21,19 @@ This repository uses Terraform to provision Ubuntu 22.04 droplets on DigitalOcea
 - SSH hardening and UFW firewall setup
 
 **Nginx** provides:
-- SSL-terminated reverse proxy (droplet.khoa.email)
+- SSL-terminated reverse proxy (`droplet.khoa.email`)
 - API routing with path rewriting for microservices
+- Static HTML landing page for `/`
+- Security enhancements (e.g., hiding version info, blocking dotfiles)
 - Service endpoints: `/api/iam/`, `/api/patient/`, `/api/testorder/`
 
 **Scripts** include:
 - Comprehensive server management tool (`server-mgmt`)
+- Security auditing tools:
+  - `failed-attempts.sh`: top failed SSH logins
+  - `successful-logins.sh`: accepted SSH logins
+  - `ufw-port-hits.sh`: top blocked IPs by port
+  - `who-is.sh`: investigate IP addresses (WHOIS, reverse DNS, IPInfo)
 - Health monitoring, resource checks, and Docker management
 - Automated backup and maintenance functions
 
@@ -37,7 +44,7 @@ The servers are configured once during provisioning to be ready for pulling Dock
 ### Terraform
 - **Location**: `terraform/`
 - **Main config**: `main.tf`
-- **SSH keys**: `terraform/keys/` (khoadesktop, khoalaptop, anh)
+- **SSH keys**: `terraform/keys/`
 - **Scripts**: `apply.sh`, `destroy.sh`
 
 ### Ansible
@@ -48,11 +55,12 @@ The servers are configured once during provisioning to be ready for pulling Dock
 ### Nginx
 - **Location**: `nginx/`
 - **Config**: `reverse_proxy.conf`
-- **Features**: SSL termination, API path rewriting, microservice routing
+- **Features**: SSL termination, static HTML root, API path rewriting, dotfile protection
 
 ### Scripts
 - **Location**: `scripts/`
 - **Main tool**: `server-mgmt` - comprehensive server management script
+- **Security tools**: SSH and firewall log analysis, WHOIS lookup
 - **Features**: health checks, Docker management, system monitoring, automated maintenance
 
 ## Team Access
