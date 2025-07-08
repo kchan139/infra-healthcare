@@ -1,1 +1,3 @@
-docker stack deploy --with-registry-auth -c compose.yml iam-stack
+#!/bin/bash
+
+docker stack deploy --with-registry-auth --detach=true -c compose.yml microservices-stack
