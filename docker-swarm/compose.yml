@@ -4,6 +4,7 @@ services:
     ports:
       - "8080:8080"
     environment:
+      SPRING_PROFILES_ACTIVE: prod
       SPRING_DATASOURCE_URL: jdbc:postgresql://db-postgresql-sgp1-01273-do-user-23760201-0.g.db.ondigitalocean.com:25060/iam-db
       SPRING_DATASOURCE_USERNAME: doadmin
     secrets:
@@ -28,6 +29,7 @@ services:
     ports:
       - "8081:8081"
     environment:
+      SPRING_PROFILES_ACTIVE: prod
       SPRING_DATASOURCE_URL: jdbc:postgresql://db-postgresql-sgp1-01273-do-user-23760201-0.g.db.ondigitalocean.com:25060/patient-db
       SPRING_DATASOURCE_USERNAME: doadmin
     secrets:
@@ -52,6 +54,7 @@ services:
   #   ports:
   #     - "8081:8081"
   #   environment:
+  #     SPRING_PROFILES_ACTIVE: prod
   #     SPRING_DATASOURCE_URL: jdbc:postgresql://db-postgresql-sgp1-01273-do-user-23760201-0.g.db.ondigitalocean.com:25060/testorder-db
   #     SPRING_DATASOURCE_USERNAME: doadmin
   #   secrets:
