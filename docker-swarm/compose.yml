@@ -1,12 +1,15 @@
 services:
   iam-service:
-    image: registry.gitlab.com/healthcare5314327/microservices/iam-service:0.0.1
+    image: registry.gitlab.com/healthcare5314327/microservices/iam-service:0.0.2
     ports:
       - "8080:8080"
     environment:
-      SPRING_PROFILES_ACTIVE: prod
       SPRING_DATASOURCE_URL: jdbc:postgresql://db-postgresql-sgp1-01273-do-user-23760201-0.g.db.ondigitalocean.com:25060/iam-db
       SPRING_DATASOURCE_USERNAME: doadmin
+      SPRING_PROFILES_ACTIVE: production
+      MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: health,info,metrics
+      MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS: when-authorized
+      LOGGING_LEVEL_ROOT: WARN
     secrets:
       - db_password
     entrypoint:
@@ -18,20 +21,53 @@ services:
         -XX:+UseG1GC -XX:+UseStringDeduplication -Djava.security.egd=file:/dev/./urandom
         -jar app.jar
     deploy:
-      replicas: 1
+      replicas: 2
       restart_policy:
         condition: on-failure
+        delay: 10s
+        max_attempts: 3
+      update_config:
+        parallelism: 1
+        delay: 10s
+        failure_action: rollback
+        monitor: 30s
+        order: start-first
+      rollback_config:
+        parallelism: 1
+        delay: 10s
+        failure_action: pause
+        monitor: 30s
+        order: stop-first
+      resources:
+        limits:
+          cpus: '0.3'
+          memory: 768M
+        reservations:
+          cpus: '0.15'
+          memory: 512M
+      placement:
+        constraints:
+          - node.role == worker
     networks:
       - microservices-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
 
   patient-service:
     image: registry.gitlab.com/healthcare5314327/microservices/patient-service:0.0.0
     ports:
       - "8081:8081"
     environment:
-      SPRING_PROFILES_ACTIVE: prod
       SPRING_DATASOURCE_URL: jdbc:postgresql://db-postgresql-sgp1-01273-do-user-23760201-0.g.db.ondigitalocean.com:25060/patient-db
       SPRING_DATASOURCE_USERNAME: doadmin
+      SPRING_PROFILES_ACTIVE: production
+      MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: health,info,metrics
+      MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS: when-authorized
+      LOGGING_LEVEL_ROOT: WARN
     secrets:
       - db_password
     entrypoint:
@@ -43,40 +79,46 @@ services:
         -XX:+UseG1GC -XX:+UseStringDeduplication -Djava.security.egd=file:/dev/./urandom
         -jar app.jar
     deploy:
-      replicas: 1
+      replicas: 2
       restart_policy:
         condition: on-failure
+        delay: 10s
+        max_attempts: 3
+      update_config:
+        parallelism: 1
+        delay: 10s
+        failure_action: rollback
+        monitor: 30s
+        order: start-first
+      rollback_config:
+        parallelism: 1
+        delay: 10s
+        failure_action: pause
+        monitor: 30s
+        order: stop-first
+      resources:
+        limits:
+          cpus: '0.3'
+          memory: 768M
+        reservations:
+          cpus: '0.15'
+          memory: 512M
+      placement:
+        constraints:
+          - node.role == worker
     networks:
       - microservices-network
-
-  # testorder-service:
-  #   image: registry.gitlab.com/healthcare5314327/microservices/testorder-service:latest
-  #   ports:
-  #     - "8081:8081"
-  #   environment:
-  #     SPRING_PROFILES_ACTIVE: prod
-  #     SPRING_DATASOURCE_URL: jdbc:postgresql://db-postgresql-sgp1-01273-do-user-23760201-0.g.db.ondigitalocean.com:25060/testorder-db
-  #     SPRING_DATASOURCE_USERNAME: doadmin
-  #   secrets:
-  #     - db_password
-  #   entrypoint:
-  #     - sh
-  #     - -c
-  #     - >
-  #       export SPRING_DATASOURCE_PASSWORD=$$(cat /run/secrets/db_password) &&
-  #       exec java -XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0
-  #       -XX:+UseG1GC -XX:+UseStringDeduplication -Djava.security.egd=file:/dev/./urandom
-  #       -jar app.jar
-  #   deploy:
-  #     replicas: 1
-  #     restart_policy:
-  #       condition: on-failure
-  #   networks:
-  #     - microservices-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8081/patient/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
 
 networks:
   microservices-network:
     driver: overlay
+    attachable: true
 
 secrets:
   db_password:
