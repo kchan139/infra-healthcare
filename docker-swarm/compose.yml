@@ -45,9 +45,6 @@ services:
         reservations:
           cpus: '0.15'
           memory: 512M
-      placement:
-        constraints:
-          - node.role == worker
     networks:
       - microservices-network
     healthcheck:
@@ -103,9 +100,6 @@ services:
         reservations:
           cpus: '0.15'
           memory: 512M
-      placement:
-        constraints:
-          - node.role == worker
     networks:
       - microservices-network
     healthcheck:
