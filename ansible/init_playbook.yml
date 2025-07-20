@@ -1,5 +1,5 @@
 ---
-- name: Provision Docker Host and Deploy Containerized Hello World Web App
+- name: Provision Microservices Server
   hosts: all
   become: yes
   gather_facts: yes
@@ -17,12 +17,6 @@
         - apt-daily-upgrade.service
         - apt-daily-upgrade.timer
       ignore_errors: yes
-
-    # - name: Kill any running apt/dpkg processes
-    #   ansible.builtin.shell: |
-    #     pkill -f 'apt|dpkg|unattended-upgrade' || true
-    #     sleep 2
-    #   changed_when: false
 
     - name: Wait a moment for processes to fully stop
       ansible.builtin.pause:
@@ -49,6 +43,97 @@
       delay: 10
       until: apt_update is succeeded
 
+    - name: Set UFW default incoming policy to deny
+      community.general.ufw:
+        direction: incoming
+        policy: deny
+
+    - name: Set UFW default outgoing policy to allow
+      community.general.ufw:
+        direction: outgoing
+        policy: allow
+
+    - name: Limit SSH (custom port)
+      community.general.ufw:
+        rule: limit
+        port: "1309"
+        proto: tcp
+
+    - name: Allow HTTPS
+      community.general.ufw:
+        rule: allow
+        port: "443"
+        proto: tcp
+
+    - name: Enable UFW
+      community.general.ufw:
+        state: enabled  
+
+    - name: Disable ssh.socket
+      ansible.builtin.systemd:
+        name: ssh.socket
+        state: stopped
+        enabled: no
+    
+    - name: Create non-root user 'khoa'
+      ansible.builtin.user:
+        name: khoa
+        state: present
+        shell: /bin/bash
+        create_home: yes
+        groups: sudo
+        append: yes
+
+    - name: Create .ssh directory for khoa
+      ansible.builtin.file:
+        path: /home/khoa/.ssh
+        state: directory
+        owner: khoa
+        group: khoa
+        mode: "0700"
+
+    - name: Copy root's authorized_keys to khoa
+      ansible.builtin.copy:
+        src: /root/.ssh/authorized_keys
+        dest: /home/khoa/.ssh/authorized_keys
+        owner: khoa
+        group: khoa
+        mode: "0600"
+        remote_src: yes
+
+    - name: Change SSH port to 1309
+      ansible.builtin.lineinfile:
+        path: /etc/ssh/ssh_config
+        regexp: "^#?Port"
+        line: "Port 1309"
+        backup: yes
+
+    - name: Disable password authentication
+      ansible.builtin.lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: "^#?PasswordAuthentication"
+        line: "PasswordAuthentication no"
+
+    - name: Disable root login
+      ansible.builtin.lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: "^#?PermitRootLogin"
+        line: "PermitRootLogin no"
+
+    - name: Enable PAM
+      ansible.builtin.lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: "^#?UsePAM"
+        line: "UsePAM yes"
+
+    - name: Validate SSH config
+      ansible.builtin.command: sshd -t
+
+    - name: Reload SSH service
+      ansible.builtin.systemd:
+        name: ssh
+        state: restarted
+      
     # --- Docker Installation ---
     - name: Install Docker prerequisites + common CLI tools
       ansible.builtin.apt:
@@ -124,6 +209,13 @@
         append: yes
       when: ansible_user != 'root'
 
+    - name: Symlink batcat to bat
+      ansible.builtin.file:
+        src: /usr/bin/batcat
+        dest: /usr/local/bin/bat
+        state: link
+      when: ansible_facts['distribution'] == 'Ubuntu'
+
     # --- Starship Installation ---
     - name: Download Starship installation script
       ansible.builtin.get_url:
@@ -158,32 +250,3 @@
             eval "$(starship init zsh)"
           fi
       ignore_errors: yes
-
-    - name: Symlink batcat to bat
-      ansible.builtin.file:
-        src: /usr/bin/batcat
-        dest: /usr/local/bin/bat
-        state: link
-      when: ansible_facts['distribution'] == 'Ubuntu'
-      
-    - name: Create scripts directory
-      ansible.builtin.file:
-        path: /opt/scripts
-        state: directory
-        mode: '0755'
-
-    - name: Copy server management script
-      ansible.builtin.copy:
-        src: ../scripts/server-mgmt.sh
-        dest: /opt/scripts/server-mgmt.sh
-        mode: '0755'
-        owner: root
-        group: root
-
-    - name: Schedule health-check cron job
-      ansible.builtin.cron:
-        name: "Server health check every 5 minutes"
-        user: root
-        minute: "*/5"
-        job: "/opt/scripts/server-mgmt.sh health >> /var/log/server-health.log 2>&1"
-
