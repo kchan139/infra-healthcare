@@ -236,6 +236,39 @@
         - logs.sh
         - remove.sh
 
+    # --- SSL/TLS Certificate Setup ---
+    - name: Install certbot and nginx plugin
+      ansible.builtin.apt:
+        name:
+          - certbot
+          - python3-certbot-nginx
+        state: present
+        lock_timeout: 300
+      register: apt_certbot
+      retries: 3
+      delay: 10
+      until: apt_certbot is succeeded
+
+    - name: Generate Let's Encrypt certificate
+      ansible.builtin.command: >
+        certbot --nginx --non-interactive --agree-tos
+        --email {{ letsencrypt_email }}
+        --domains {{ domain_name }}
+        --redirect
+      register: certbot_result
+      failed_when: certbot_result.rc != 0
+
+    - name: Display certificate generation results
+      ansible.builtin.debug:
+        var: certbot_result.stdout_lines
+
+    - name: Set up automatic certificate renewal
+      ansible.builtin.cron:
+        name: "Renew Let's Encrypt certificates"
+        minute: "0"
+        hour: "12"
+        job: "/usr/bin/certbot renew --quiet"
+
     # --- Docker Installation ---
     - name: Create directory for Docker GPG key
       ansible.builtin.file:
