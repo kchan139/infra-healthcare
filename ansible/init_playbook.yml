@@ -160,21 +160,26 @@
         port: "{{ ssh_port }}"
         proto: tcp
 
-    - name: Allow HTTP
-      community.general.ufw:
-        rule: allow
-        port: "80"
-        proto: tcp
-
-    - name: Allow HTTPS
-      community.general.ufw:
-        rule: allow
-        port: "443"
-        proto: tcp
-
     - name: Enable UFW
       community.general.ufw:
         state: enabled
+
+    # --- CloudFlare's IP Whitelisting ---
+    - name: Copy IP restriction script
+      ansible.builtin.copy:
+        src: ../scripts/restrict-ips.sh
+        dest: /opt/restrict-ips.sh
+        owner: root
+        group: root
+        mode: "0755"
+
+    - name: Run IP restriction script to allow HTTPS only from Cloudflare
+      ansible.builtin.shell: /opt/restrict-ips.sh
+      register: restrict_result
+
+    - name: Display IP restriction results
+      ansible.builtin.debug:
+        var: restrict_result.stdout_lines
 
     # --- Nginx Configuration ---
     - name: Start and enable nginx
