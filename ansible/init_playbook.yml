@@ -3,7 +3,10 @@
   hosts: all
   become: yes
   gather_facts: yes
-  
+
+  var_files:
+    - vars/password.yml
+
   pre_tasks:
     - name: Stop and mask automatic update services
       ansible.builtin.systemd:
@@ -32,7 +35,6 @@
         - /var/cache/apt/archives/lock
       ignore_errors: yes
 
-  tasks:
     - name: Update apt cache
       ansible.builtin.apt:
         update_cache: yes
@@ -43,38 +45,37 @@
       delay: 10
       until: apt_update is succeeded
 
-    - name: Set UFW default incoming policy to deny
-      community.general.ufw:
-        direction: incoming
-        policy: deny
+  tasks:
+    # --- Package Installation ---
+    - name: Install prerequisites and CLI tools
+      ansible.builtin.apt:
+        name:
+          - apt-transport-https
+          - ca-certificates
+          - curl
+          - gnupg
+          - lsb-release
+          - htop
+          - tree
+          - bat
+          - net-tools
+          - neofetch
+          - nginx
+        state: present
+        lock_timeout: 300
+      register: apt_prereqs
+      retries: 3
+      delay: 10
+      until: apt_prereqs is succeeded
 
-    - name: Set UFW default outgoing policy to allow
-      community.general.ufw:
-        direction: outgoing
-        policy: allow
+    - name: Symlink batcat to bat
+      ansible.builtin.file:
+        src: /usr/bin/batcat
+        dest: /usr/local/bin/bat
+        state: link
+      when: ansible_facts['distribution'] == 'Ubuntu'
 
-    - name: Limit SSH (custom port)
-      community.general.ufw:
-        rule: limit
-        port: "1309"
-        proto: tcp
-
-    - name: Allow HTTPS
-      community.general.ufw:
-        rule: allow
-        port: "443"
-        proto: tcp
-
-    - name: Enable UFW
-      community.general.ufw:
-        state: enabled  
-
-    - name: Disable ssh.socket
-      ansible.builtin.systemd:
-        name: ssh.socket
-        state: stopped
-        enabled: no
-    
+    # --- User Management ---
     - name: Create non-root user 'khoa'
       ansible.builtin.user:
         name: khoa
@@ -83,6 +84,7 @@
         create_home: yes
         groups: sudo
         append: yes
+        password: "{{ khoa_password | password_hash('sha512') }}"
 
     - name: Create .ssh directory for khoa
       ansible.builtin.file:
@@ -101,11 +103,18 @@
         mode: "0600"
         remote_src: yes
 
-    - name: Change SSH port to 1309
+    # --- SSH Configuration ---
+    - name: Disable ssh.socket
+      ansible.builtin.systemd:
+        name: ssh.socket
+        state: stopped
+        enabled: no
+
+    - name: Change SSH port to {{ ssh_port }}
       ansible.builtin.lineinfile:
-        path: /etc/ssh/ssh_config
+        path: /etc/ssh/sshd_config
         regexp: "^#?Port"
-        line: "Port 1309"
+        line: "Port {{ ssh_port }}"
         backup: yes
 
     - name: Disable password authentication
@@ -133,39 +142,107 @@
       ansible.builtin.systemd:
         name: ssh
         state: restarted
-      
-    # --- Docker Installation ---
-    - name: Install Docker prerequisites + common CLI tools
-      ansible.builtin.apt:
-        name:
-          - apt-transport-https
-          - ca-certificates
-          - curl
-          - gnupg
-          - lsb-release
-          - htop
-          - tree
-          - bat
-          - net-tools
-          - neofetch
-        state: present
-        lock_timeout: 300
-      register: apt_prereqs
-      retries: 3
-      delay: 10
-      until: apt_prereqs is succeeded   
 
+    # --- Firewall Configuration ---
+    - name: Set UFW default incoming policy to deny
+      community.general.ufw:
+        direction: incoming
+        policy: deny
+
+    - name: Set UFW default outgoing policy to allow
+      community.general.ufw:
+        direction: outgoing
+        policy: allow
+
+    - name: Limit SSH (custom port)
+      community.general.ufw:
+        rule: limit
+        port: "{{ ssh_port }}"
+        proto: tcp
+
+    - name: Allow HTTP
+      community.general.ufw:
+        rule: allow
+        port: "80"
+        proto: tcp
+
+    - name: Allow HTTPS
+      community.general.ufw:
+        rule: allow
+        port: "443"
+        proto: tcp
+
+    - name: Enable UFW
+      community.general.ufw:
+        state: enabled
+
+    # --- Nginx Configuration ---
+    - name: Start and enable nginx
+      ansible.builtin.systemd:
+        name: nginx
+        state: started
+        enabled: yes
+
+    - name: Copy nginx configuration
+      ansible.builtin.copy:
+        src: ../nginx/reverse_proxy.conf
+        dest: /etc/nginx/sites-available/default
+        owner: root
+        group: root
+        mode: "0644"
+        backup: yes
+
+    - name: Test nginx configuration
+      ansible.builtin.command: nginx -t
+      register: nginx_test
+      failed_when: nginx_test.rc != 0
+
+    - name: Reload nginx
+      ansible.builtin.systemd:
+        name: nginx
+        state: reloaded
+      when: nginx_test.rc == 0
+
+    # --- Microservices Directory Setup ---
+    - name: Create microservices directory
+      ansible.builtin.file:
+        path: /opt/microservices
+        state: directory
+        owner: root
+        group: root
+        mode: "0755"
+
+    - name: Copy docker-swarm directory to /opt/microservices
+      ansible.builtin.copy:
+        src: ../docker-swarm/
+        dest: /opt/microservices/
+        owner: root
+        group: root
+        mode: preserve
+        backup: yes
+
+    - name: Make shell scripts executable
+      ansible.builtin.file:
+        path: "/opt/microservices/scripts/{{ item }}"
+        mode: "0755"
+      loop:
+        - cleanup.sh
+        - deploy.sh
+        - logs.sh
+        - remove.sh
+
+    # --- Docker Installation ---
     - name: Create directory for Docker GPG key
       ansible.builtin.file:
         path: /etc/apt/keyrings
         state: directory
-        mode: '0755'
+        mode: "0755"
 
     - name: Download Docker GPG key
       ansible.builtin.get_url:
         url: https://download.docker.com/linux/ubuntu/gpg
         dest: /tmp/docker.gpg
-        mode: '0644'
+        mode: "0644"
 
     - name: Add Docker GPG key
       ansible.builtin.shell: |
@@ -209,19 +286,12 @@
         append: yes
       when: ansible_user != 'root'
 
-    - name: Symlink batcat to bat
-      ansible.builtin.file:
-        src: /usr/bin/batcat
-        dest: /usr/local/bin/bat
-        state: link
-      when: ansible_facts['distribution'] == 'Ubuntu'
-
-    # --- Starship Installation ---
+    # --- Shell Customization ---
     - name: Download Starship installation script
       ansible.builtin.get_url:
         url: https://starship.rs/install.sh
         dest: /tmp/starship_install.sh
-        mode: '0755'
+        mode: "0755"
 
     - name: Install Starship
       ansible.builtin.shell: /tmp/starship_install.sh --yes
@@ -232,21 +302,9 @@
       ansible.builtin.blockinfile:
         path: /etc/profile.d/starship.sh
         create: yes
-        mode: '0755'
+        mode: "0755"
         block: |
           # Initialize Starship prompt
           if command -v starship >/dev/null 2>&1; then
             eval "$(starship init bash)"
           fi
-
-    - name: Add Starship to zsh profile for all users
-      ansible.builtin.blockinfile:
-        path: /etc/zsh/zshrc
-        create: yes
-        mode: '0644'
-        block: |
-          # Initialize Starship prompt
-          if command -v starship >/dev/null 2>&1; then
-            eval "$(starship init zsh)"
-          fi
-      ignore_errors: yes

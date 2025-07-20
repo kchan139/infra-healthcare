@@ -37,10 +37,10 @@ resource "digitalocean_droplet" "microservices" {
     digitalocean_ssh_key.anh.id,
   ]
 
-  provisioner "local-exec" {
-    command = "sleep 30 && ../ansible/scripts/init.sh ${self.ipv4_address}"
-    when    = create
-  }
+  # provisioner "local-exec" {
+  #   command = "sleep 30 && ../ansible/scripts/init.sh ${self.ipv4_address}"
+  #   when    = create
+  # }
 
   backups = false
   # backups = true
