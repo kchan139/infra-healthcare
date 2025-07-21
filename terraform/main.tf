@@ -27,10 +27,10 @@ resource "digitalocean_ssh_key" "anh" {
 
 resource "digitalocean_droplet" "microservices" {
   count  = 1
-  image  = "ubuntu-22-04-x64"
+  image  = "ubuntu-24-04-x64"
   name   = "microservices-${count.index + 1}"
   region = "sgp1"
-  size   = "s-2vcpu-8gb-amd"
+  size   = "s-4vcpu-8gb-intel"
   ssh_keys = [
     digitalocean_ssh_key.khoadesktop.id,
     digitalocean_ssh_key.khoalaptop.id,
