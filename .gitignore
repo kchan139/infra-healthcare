@@ -60,3 +60,4 @@ ansible/roles/*
 
 .env
 ansible/vars/password.yml
+inventory.ini
