@@ -61,6 +61,7 @@
           - net-tools
           - neofetch
           - nginx
+          - nghttp2-client
         state: present
         lock_timeout: 300
       register: apt_prereqs
