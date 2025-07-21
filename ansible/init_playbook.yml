@@ -4,7 +4,7 @@
   become: yes
   gather_facts: yes
 
-  var_files:
+  vars_files:
     - vars/password.yml
 
   pre_tasks:
@@ -160,26 +160,73 @@
         port: "{{ ssh_port }}"
         proto: tcp
 
+    - name: Allow HTTP (port 80)
+      community.general.ufw:
+        rule: allow
+        port: "80"
+        proto: tcp
+
     - name: Enable UFW
       community.general.ufw:
         state: enabled
 
-    # --- CloudFlare's IP Whitelisting ---
-    - name: Copy IP restriction script
+    # --- Scripts Setup ---
+    - name: Create scripts directory
+      ansible.builtin.file:
+        path: /opt/scripts
+        state: directory
+        owner: root
+        group: root
+        mode: "0755"
+
+    - name: Copy all scripts to server
       ansible.builtin.copy:
-        src: ../scripts/restrict-ips.sh
-        dest: /opt/restrict-ips.sh
+        src: ../scripts/
+        dest: /opt/scripts/
         owner: root
         group: root
         mode: "0755"
 
     - name: Run IP restriction script to allow HTTPS only from Cloudflare
-      ansible.builtin.shell: /opt/restrict-ips.sh
+      ansible.builtin.shell: /opt/scripts/restrict-ips.sh
       register: restrict_result
 
     - name: Display IP restriction results
       ansible.builtin.debug:
         var: restrict_result.stdout_lines
+
+    # --- SSL/TLS Certificate Setup ---
+    - name: Install certbot and nginx plugin
+      ansible.builtin.apt:
+        name:
+          - certbot
+          - python3-certbot-nginx
+        state: present
+        lock_timeout: 300
+      register: apt_certbot
+      retries: 3
+      delay: 10
+      until: apt_certbot is succeeded
+
+    - name: Generate Let's Encrypt certificate
+      ansible.builtin.command: >
+        certbot --nginx --non-interactive --agree-tos
+        --email {{ letsencrypt_email }}
+        --domains {{ domain_name }}
+        --redirect
+      register: certbot_result
+      failed_when: certbot_result.rc != 0
+
+    - name: Display certificate generation results
+      ansible.builtin.debug:
+        var: certbot_result.stdout_lines
+
+    - name: Set up automatic certificate renewal
+      ansible.builtin.cron:
+        name: "Renew Let's Encrypt certificates"
+        minute: "0"
+        hour: "12"
+        job: "/usr/bin/certbot renew --quiet"
 
     # --- Nginx Configuration ---
     - name: Start and enable nginx
@@ -194,6 +241,15 @@
         dest: /etc/nginx/sites-available/default
         owner: root
         group: root
+        mode: "0644"
+        backup: yes
+
+    - name: Copy HTML files to web directory
+      ansible.builtin.copy:
+        src: ../nginx/html/
+        dest: /var/www/html/
+        owner: www-data
+        group: www-data
         mode: "0644"
         backup: yes
 
@@ -235,39 +291,6 @@
         - deploy.sh
         - logs.sh
         - remove.sh
-
-    # --- SSL/TLS Certificate Setup ---
-    - name: Install certbot and nginx plugin
-      ansible.builtin.apt:
-        name:
-          - certbot
-          - python3-certbot-nginx
-        state: present
-        lock_timeout: 300
-      register: apt_certbot
-      retries: 3
-      delay: 10
-      until: apt_certbot is succeeded
-
-    - name: Generate Let's Encrypt certificate
-      ansible.builtin.command: >
-        certbot --nginx --non-interactive --agree-tos
-        --email {{ letsencrypt_email }}
-        --domains {{ domain_name }}
-        --redirect
-      register: certbot_result
-      failed_when: certbot_result.rc != 0
-
-    - name: Display certificate generation results
-      ansible.builtin.debug:
-        var: certbot_result.stdout_lines
-
-    - name: Set up automatic certificate renewal
-      ansible.builtin.cron:
-        name: "Renew Let's Encrypt certificates"
-        minute: "0"
-        hour: "12"
-        job: "/usr/bin/certbot renew --quiet"
 
     # --- Docker Installation ---
     - name: Create directory for Docker GPG key
@@ -324,6 +347,26 @@
         append: yes
       when: ansible_user != 'root'
 
+    - name: Check if Swarm is already active
+      ansible.builtin.command: docker info
+      register: docker_info_result
+
+    - name: Initialize Docker Swarm if not active
+      ansible.builtin.command: docker swarm init --advertise-addr {{ ansible_default_ipv4.address }}
+      when: "'Swarm: active' not in docker_info_result.stdout"
+      register: swarm_init_result
+      changed_when: "'Swarm initialized' in swarm_init_result.stdout"
+
+    - name: Check if Docker secret 'db_password' exists
+      ansible.builtin.shell: docker secret ls --filter name=db_password --format '{{ "{{.Name}}" }}'
+      register: secret_check
+      changed_when: false
+
+    - name: Create Docker secret 'db_password' if not exists
+      ansible.builtin.shell: echo "{{ db_password }}" | docker secret create db_password -
+      when: secret_check.stdout != "db_password"
+      no_log: true
+
     # --- Shell Customization ---
     - name: Download Starship installation script
       ansible.builtin.get_url:
@@ -346,3 +389,15 @@
           if command -v starship >/dev/null 2>&1; then
             eval "$(starship init bash)"
           fi
+
+    # --- HELIX --- #
+    - name: Add Helix PPA
+      ansible.builtin.apt_repository:
+        repo: ppa:maveonair/helix-editor
+        state: present
+
+    - name: Install Helix
+      ansible.builtin.apt:
+        name: helix
+        state: present
+        update_cache: yes

@@ -10,7 +10,7 @@ SSH_PORT=1309
 # Generate inventory.ini
 echo "[servers]" > "$INVENTORY_FILE"
 terraform -chdir="$TERRAFORM_DIR" output -json droplet_ips \
-  | jq -r '.[]' \
+  | jq -r '.[] | . + " ansible_port=1309"' \
   >> "$INVENTORY_FILE"
 
 echo "Generated inventory:"
