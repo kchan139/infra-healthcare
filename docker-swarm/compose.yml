@@ -1,6 +1,6 @@
 services:
   iam-service:
-    image: registry.gitlab.com/healthcare5314327/microservices/iam-service:0.0.2
+    image: registry.gitlab.com/healthcare5314327/microservices/iam-service:15-jul-1524
     ports:
       - "8080:8080"
     environment:
@@ -30,13 +30,13 @@ services:
         parallelism: 1
         delay: 10s
         failure_action: rollback
-        monitor: 30s
+        monitor: 120s
         order: start-first
       rollback_config:
         parallelism: 1
         delay: 10s
         failure_action: pause
-        monitor: 30s
+        monitor: 120s
         order: stop-first
       resources:
         limits:
@@ -47,15 +47,15 @@ services:
           memory: 512M
     networks:
       - microservices-network
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/actuator/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 60s
+    # healthcheck:
+    #   test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/iam/actuator/health"]
+    #   interval: 30s
+    #   timeout: 10s
+    #   retries: 3
+    #   start_period: 120s
 
   patient-service:
-    image: registry.gitlab.com/healthcare5314327/microservices/patient-service:0.0.0
+    image: registry.gitlab.com/healthcare5314327/microservices/patient-service:15-jul-1526
     ports:
       - "8081:8081"
     environment:
@@ -85,13 +85,13 @@ services:
         parallelism: 1
         delay: 10s
         failure_action: rollback
-        monitor: 30s
+        monitor: 120s
         order: start-first
       rollback_config:
         parallelism: 1
         delay: 10s
         failure_action: pause
-        monitor: 30s
+        monitor: 120s
         order: stop-first
       resources:
         limits:
@@ -107,7 +107,7 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 60s
+      start_period: 120s
 
 networks:
   microservices-network:
