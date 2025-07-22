@@ -196,6 +196,49 @@
       ansible.builtin.debug:
         var: restrict_result.stdout_lines
 
+    # --- Dynamic Cloudflare IP Configuration ---
+    - name: Create nginx conf.d directory
+      ansible.builtin.file:
+        path: /etc/nginx/conf.d
+        state: directory
+        owner: root
+        group: root
+        mode: "0755"
+
+    - name: Copy Cloudflare IP updater script
+      ansible.builtin.copy:
+        src: ../scripts/update-ips-nginx.sh
+        dest: /opt/scripts/update-ips-nginx.sh
+        owner: root
+        group: root
+        mode: "0755"
+
+    - name: Generate initial Cloudflare IPs configuration
+      ansible.builtin.command: /opt/scripts/update-ips-nginx.sh
+      register: cf_ip_result
+
+    - name: Display Cloudflare IP update results
+      ansible.builtin.debug:
+        var: cf_ip_result.stdout_lines
+
+    - name: Set up weekly Cloudflare IP updates
+      ansible.builtin.cron:
+        name: "Update Cloudflare IPs for nginx"
+        minute: "0"
+        hour: "2"
+        weekday: "1"
+        job: "/opt/scripts/update-ips-nginx.sh"
+        user: root
+
+    - name: Set up weekly UFW Cloudflare IP updates
+      ansible.builtin.cron:
+        name: "Update UFW Cloudflare IP restrictions"
+        minute: "30"
+        hour: "2"
+        weekday: "1"
+        job: "/opt/scripts/restrict-ips.sh"
+        user: root
+
     # --- SSL/TLS Certificate Setup ---
     - name: Install certbot and nginx plugin
       ansible.builtin.apt:
