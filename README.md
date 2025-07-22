@@ -1,28 +1,25 @@
 # Infrastructure
 
-**DevOps Team Only**
+Provision DigitalOcean droplets for containerized microservices.
 
-Provision and configure DigitalOcean droplets for containerized microservices.
+## Stack
 
-## Overview
-
-- **Terraform**: Provisions Ubuntu droplets (2 vCPU, 8GB RAM), manages SSH keys, and outputs inventory.
-- **Ansible**: Bootstraps Docker hosts with secure user access, UFW firewall, SSH hardening, and Nginx reverse proxy.
-- **Nginx**: Serves as SSL-terminated reverse proxy for microservices at `droplet.khoa.email`.
-- **Scripts**: Automate provisioning, security auditing, Docker ops, and system monitoring.
+- **Terraform**: Provisions Ubuntu droplets, SSH keys
+- **Ansible**: Configures Docker Swarm, Nginx proxy, security
+- **Docker Swarm**: Runs IAM + Patient services 
+- **Nginx**: SSL proxy at `microservices.khoa.email`
 
 ## Structure
 
-- `terraform/`: Infrastructure provisioning (`main.tf`, `apply.sh`, `destroy.sh`)
-- `ansible/`: Playbooks (`init_playbook.yml`), helper scripts, vault-secured vars
-- `nginx/`: Reverse proxy config with static root and API routing
-- `scripts/`: Server management, Cloudflare's IP whitelisting, log analysis, WHOIS, backups
+- `terraform/`: Infrastructure (`main.tf`, scripts, SSH keys)
+- `ansible/`: Server config (`init_playbook.yml`, vars)
+- `docker-swarm/`: App deployment (`compose.yml`, scripts)
+- `nginx/`: Reverse proxy config
+- `scripts/`: Operations tools
 
 ## Usage
 
 1. Set `DIGITALOCEAN_TOKEN` in `terraform/.env`
-2. Run `terraform/scripts/apply.sh` to provision
-3. Use `ansible/scripts/init.sh` to config
-4. Manage servers via `scripts/server-mgmt`
-
-SSH access managed via `terraform/keys/`
+2. Run `terraform/scripts/apply.sh`
+3. Run `ansible/scripts/init.sh <ip>`
+4. Deploy: `ssh khoa@<ip>` → `cd /opt/microservices` → `./scripts/deploy.sh`
