@@ -6,14 +6,14 @@ Provision DigitalOcean droplets for containerized microservices.
 
 - **Terraform**: Provisions Ubuntu droplets, SSH keys
 - **Ansible**: Configures Docker Swarm, Nginx proxy, security
-- **Docker Swarm**: Runs IAM + Patient services 
+- **Docker Swarm**: Runs IAM + Patient + Test Order services 
 - **Nginx**: SSL proxy at `microservices.khoa.email`
 
 ## Structure
 
 - `terraform/`: Infrastructure (`main.tf`, scripts, SSH keys)
 - `ansible/`: Server config (`init_playbook.yml`, vars)
-- `docker-swarm/`: App deployment (`compose.yml`, scripts)
+- `swarm/`: App deployment (`compose.yml`, scripts)
 - `nginx/`: Reverse proxy config
 - `scripts/`: Operations tools
 

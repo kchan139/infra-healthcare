@@ -317,9 +317,9 @@
         group: root
         mode: "0755"
 
-    - name: Copy docker-swarm directory to /opt/microservices
+    - name: Copy swarm directory to /opt/microservices
       ansible.builtin.copy:
-        src: ../docker-swarm/
+        src: ../swarm/
         dest: /opt/microservices/
         owner: root
         group: root
