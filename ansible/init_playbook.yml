@@ -401,14 +401,35 @@
       register: swarm_init_result
       changed_when: "'Swarm initialized' in swarm_init_result.stdout"
 
-    - name: Check if Docker secret 'db_password' exists
-      ansible.builtin.shell: docker secret ls --filter name=db_password --format '{{ "{{.Name}}" }}'
-      register: secret_check
+    # --- Docker Secrets Management ---
+    - name: Check existing Docker secrets
+      ansible.builtin.shell: docker secret ls --format '{{ "{{.Name}}" }}'
+      register: existing_secrets
       changed_when: false
 
     - name: Create Docker secret 'db_password' if not exists
       ansible.builtin.shell: echo "{{ db_password }}" | docker secret create db_password -
-      when: secret_check.stdout != "db_password"
+      when: "'db_password' not in existing_secrets.stdout_lines"
+      no_log: true
+
+    - name: Create Docker secret 'db_username' if not exists
+      ansible.builtin.shell: echo "{{ db_username }}" | docker secret create db_username -
+      when: "'db_username' not in existing_secrets.stdout_lines"
+      no_log: true
+
+    - name: Create Docker secret 'db_url' (IAM service) if not exists
+      ansible.builtin.shell: echo "{{ iam_db_url }}" | docker secret create db_url -
+      when: "'db_url' not in existing_secrets.stdout_lines"
+      no_log: true
+
+    - name: Create Docker secret 'patient_db_url' if not exists
+      ansible.builtin.shell: echo "{{ patient_db_url }}" | docker secret create patient_db_url -
+      when: "'patient_db_url' not in existing_secrets.stdout_lines"
+      no_log: true
+
+    - name: Create Docker secret 'testorder_db_url' if not exists
+      ansible.builtin.shell: echo "{{ testorder_db_url }}" | docker secret create testorder_db_url -
+      when: "'testorder_db_url' not in existing_secrets.stdout_lines"
       no_log: true
 
     # --- Shell Customization ---
