@@ -7,27 +7,24 @@ echo "Benchmarking service: '$SERVICE'..."
 
 case "$SERVICE" in
   root)
-    h2load -n 2500 -c 50 -m 10 https://droplet.khoa.email
+    h2load -n 2500 -c 50 -m 10 https://microservices.khoa.email
     ;;
 
   iam)
     h2load -n 500 -c 20 -m 10 \
       -H "User-Agent: PostmanRuntime/7.29.0" \
       -H "Content-Type: application/json" \
+      -H "Accept: application/json" \
       -d login.json \
-      https://droplet.khoa.email/api/iam/auth/login
+      https://microservices.khoa.email/auth/login
     ;;
 
   patient)
     echo "[placeholder] Would benchmark /api/patient endpoint here"
-    # Example:
-    # h2load -n 500 -c 20 -m 10 -d patient.json https://droplet.khoa.email/api/patient/...
     ;;
 
   testorder)
     echo "[placeholder] Would benchmark /api/testorder endpoint here"
-    # Example:
-    # h2load -n 500 -c 20 -m 10 -d testorder.json https://droplet.khoa.email/api/testorder/...
     ;;
 
   *)
