@@ -42,11 +42,11 @@ services:
         order: stop-first
       resources:
         limits:
-          cpus: '0.5'
-          memory: 1G
+          cpus: '1.25'
+          memory: 896M
         reservations:
-          cpus: '0.25'
-          memory: 768M
+          cpus: '0.5'
+          memory: 640M
     networks:
       - microservices-network
     # healthcheck:
@@ -99,11 +99,11 @@ services:
         order: stop-first
       resources:
         limits:
-          cpus: '0.5'
-          memory: 1G
-        reservations:
           cpus: '0.25'
-          memory: 768M
+          memory: 1.25G
+        reservations:
+          cpus: '0.2'
+          memory: 896M
     networks:
       - microservices-network
     healthcheck:
@@ -156,11 +156,11 @@ services:
   #       order: stop-first
   #     resources:
   #       limits:
-  #         cpus: '0.5'
-  #         memory: 1G
+  #         cpus: '0.375'
+  #         memory: 1.25G
   #       reservations:
   #         cpus: '0.25'
-  #         memory: 768M
+  #         memory: 896M
   #   networks:
   #     - microservices-network
   #   healthcheck:
