@@ -281,7 +281,7 @@
 
     - name: Copy nginx configuration
       ansible.builtin.copy:
-        src: ../nginx/reverse_proxy.conf
+        src: ../nginx/nginx.conf
         dest: /etc/nginx/sites-available/default
         owner: root
         group: root
