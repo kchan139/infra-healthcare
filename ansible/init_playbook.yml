@@ -432,6 +432,16 @@
       when: "'testorder_db_url' not in existing_secrets.stdout_lines"
       no_log: true
 
+    - name: Create Docker secret 'smtp_username' if not exists
+      ansible.builtin.shell: echo "{{ smtp_username }}" | docker secret create smtp_username -
+      when: "'smtp_username' not in existing_secrets.stdout_lines"
+      no_log: true
+
+    - name: Create Docker secret 'smtp_password' if not exists
+      ansible.builtin.shell: echo "{{ smtp_password }}" | docker secret create smtp_password -
+      when: "'smtp_password' not in existing_secrets.stdout_lines"
+      no_log: true
+
     # --- Shell Customization ---
     - name: Download Starship installation script
       ansible.builtin.get_url:

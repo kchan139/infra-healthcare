@@ -1,24 +1,29 @@
 services:
   iam-service:
-    image: registry.gitlab.com/healthcare5314327/microservices/iam-service:15-jul-1524
+    image: registry.gitlab.com/healthcare5314327/microservices/iam-service:latest
     ports:
       - "8080:8080"
     environment:
       SPRING_PROFILES_ACTIVE: production
-      MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: health,info,metrics
-      MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS: when-authorized
+      MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: health
+      MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS: always
       LOGGING_LEVEL_ROOT: WARN
     secrets:
       - db_password
       - db_url
       - db_username
+      - smtp_username
+      - smtp_password 
     entrypoint:
       - sh
       - -c
       - >
+        export MANAGEMENT_HEALTH_MAIL_ENABLED=false &&
         export SPRING_DATASOURCE_PASSWORD=$$(cat /run/secrets/db_password) &&
         export SPRING_DATASOURCE_URL=$$(cat /run/secrets/db_url) &&
         export SPRING_DATASOURCE_USERNAME=$$(cat /run/secrets/db_username) &&
+        export SPRING_MAIL_USERNAME=$$(cat /run/secrets/smtp_username) &&
+        export SPRING_MAIL_PASSWORD=$$(cat /run/secrets/smtp_password) &&
         exec java -XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0
         -XX:+UseG1GC -XX:+UseStringDeduplication -Djava.security.egd=file:/dev/./urandom
         -jar app.jar
@@ -49,21 +54,21 @@ services:
           memory: 640M
     networks:
       - microservices-network
-    # healthcheck:
-    #   test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/iam/actuator/health"]
-    #   interval: 30s
-    #   timeout: 10s
-    #   retries: 3
-    #   start_period: 120s
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/iam/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 120s
 
   patient-service:
-    image: registry.gitlab.com/healthcare5314327/microservices/patient-service:15-jul-1526
+    image: registry.gitlab.com/healthcare5314327/microservices/patient-service:latest
     ports:
       - "8081:8081"
     environment:
       SPRING_PROFILES_ACTIVE: production
-      MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: health,info,metrics
-      MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS: when-authorized
+      MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: health
+      MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS: always
       LOGGING_LEVEL_ROOT: WARN
     secrets:
       - db_password
@@ -119,8 +124,8 @@ services:
   #     - "8082:8082"
   #   environment:
   #     SPRING_PROFILES_ACTIVE: production
-  #     MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: health,info,metrics
-  #     MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS: when-authorized
+  #     MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: health
+  #     MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS: always
   #     LOGGING_LEVEL_ROOT: WARN
   #   secrets:
   #     - db_password
@@ -185,4 +190,8 @@ secrets:
   testorder_db_url:
     external: true
   db_username:
+    external: true
+  smtp_username:
+    external: true
+  smtp_password:
     external: true
