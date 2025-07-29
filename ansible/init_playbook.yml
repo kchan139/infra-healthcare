@@ -55,7 +55,7 @@
           - curl
           - gnupg
           - lsb-release
-          - htop
+          - btop
           - tree
           - bat
           - net-tools
@@ -390,6 +390,10 @@
         groups: docker
         append: yes
       when: ansible_user != 'root'
+
+    - name: Login to GitLab Container Registry
+      ansible.builtin.shell: echo "{{ gitlab_token }}" | docker login registry.gitlab.com -u gitlab-ci-token --password-stdin
+      no_log: true
 
     - name: Check if Swarm is already active
       ansible.builtin.command: docker info
