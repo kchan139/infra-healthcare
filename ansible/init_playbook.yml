@@ -391,8 +391,9 @@
         append: yes
       when: ansible_user != 'root'
 
-    - name: Login to GitLab Container Registry
-      ansible.builtin.shell: echo "{{ gitlab_token }}" | docker login registry.gitlab.com -u gitlab-ci-token --password-stdin
+    - name: Login to GitLab Container Registry with token as both username and password
+      ansible.builtin.shell: |
+        echo "{{ gitlab_token }}" | docker login registry.gitlab.com -u "{{ gitlab_token }}" --password-stdin
       no_log: true
 
     - name: Check if Swarm is already active
