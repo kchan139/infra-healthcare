@@ -76,6 +76,10 @@
         state: link
       when: ansible_facts['distribution'] == 'Ubuntu'
 
+    - name: Set timezone to Asia/Ho_Chi_Minh
+      ansible.builtin.timezone:
+        name: Asia/Ho_Chi_Minh
+
     # --- User Management ---
     - name: Create non-root user 'khoa'
       ansible.builtin.user:
