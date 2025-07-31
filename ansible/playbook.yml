@@ -1,8 +1,8 @@
 ---
 - name: Provision Microservices Server
   hosts: all
-  become: yes
-  gather_facts: yes
+  become: true
+  gather_facts: true
 
   vars_files:
     - vars/password.yml
@@ -19,7 +19,7 @@
         - apt-daily.timer
         - apt-daily-upgrade.service
         - apt-daily-upgrade.timer
-      ignore_errors: yes
+      ignore_errors: true
 
     - name: Wait a moment for processes to fully stop
       ansible.builtin.pause:
@@ -33,7 +33,7 @@
         - /var/lib/dpkg/lock
         - /var/lib/dpkg/lock-frontend
         - /var/cache/apt/archives/lock
-      ignore_errors: yes
+      ignore_errors: true
 
     - name: Update apt cache
       ansible.builtin.apt:
@@ -46,7 +46,6 @@
       until: apt_update is succeeded
 
   tasks:
-    # --- Package Installation ---
     - name: Install prerequisites and CLI tools
       ansible.builtin.apt:
         name:
@@ -60,8 +59,6 @@
           - bat
           - net-tools
           - neofetch
-          - nginx
-          - nghttp2-client
         state: present
         lock_timeout: 300
       register: apt_prereqs
@@ -80,7 +77,6 @@
       ansible.builtin.timezone:
         name: Asia/Ho_Chi_Minh
 
-    # --- User Management ---
     - name: Create non-root user 'khoa'
       ansible.builtin.user:
         name: khoa
@@ -108,7 +104,6 @@
         mode: "0600"
         remote_src: yes
 
-    # --- SSH Configuration ---
     - name: Disable ssh.socket
       ansible.builtin.systemd:
         name: ssh.socket
@@ -148,7 +143,6 @@
         name: ssh
         state: restarted
 
-    # --- Firewall Configuration ---
     - name: Set UFW default incoming policy to deny
       community.general.ufw:
         direction: incoming
@@ -171,11 +165,16 @@
         port: "80"
         proto: tcp
 
+    - name: Allow HTTPS (port 443)
+      community.general.ufw:
+        rule: allow
+        port: "443"
+        proto: tcp
+
     - name: Enable UFW
       community.general.ufw:
         state: enabled
 
-    # --- Scripts Setup ---
     - name: Create scripts directory
       ansible.builtin.file:
         path: /opt/scripts
@@ -192,127 +191,6 @@
         group: root
         mode: "0755"
 
-    - name: Run IP restriction script to allow HTTPS only from Cloudflare
-      ansible.builtin.shell: /opt/scripts/restrict-ips.sh
-      register: restrict_result
-
-    - name: Display IP restriction results
-      ansible.builtin.debug:
-        var: restrict_result.stdout_lines
-
-    # --- Dynamic Cloudflare IP Configuration ---
-    - name: Create nginx conf.d directory
-      ansible.builtin.file:
-        path: /etc/nginx/conf.d
-        state: directory
-        owner: root
-        group: root
-        mode: "0755"
-
-    - name: Copy Cloudflare IP updater script
-      ansible.builtin.copy:
-        src: ../scripts/update-ips-nginx.sh
-        dest: /opt/scripts/update-ips-nginx.sh
-        owner: root
-        group: root
-        mode: "0755"
-
-    - name: Generate initial Cloudflare IPs configuration
-      ansible.builtin.command: /opt/scripts/update-ips-nginx.sh
-      register: cf_ip_result
-
-    - name: Display Cloudflare IP update results
-      ansible.builtin.debug:
-        var: cf_ip_result.stdout_lines
-
-    - name: Set up weekly Cloudflare IP updates
-      ansible.builtin.cron:
-        name: "Update Cloudflare IPs for nginx"
-        minute: "0"
-        hour: "2"
-        weekday: "1"
-        job: "/opt/scripts/update-ips-nginx.sh"
-        user: root
-
-    - name: Set up weekly UFW Cloudflare IP updates
-      ansible.builtin.cron:
-        name: "Update UFW Cloudflare IP restrictions"
-        minute: "30"
-        hour: "2"
-        weekday: "1"
-        job: "/opt/scripts/restrict-ips.sh"
-        user: root
-
-    # --- SSL/TLS Certificate Setup ---
-    - name: Install certbot and nginx plugin
-      ansible.builtin.apt:
-        name:
-          - certbot
-          - python3-certbot-nginx
-        state: present
-        lock_timeout: 300
-      register: apt_certbot
-      retries: 3
-      delay: 10
-      until: apt_certbot is succeeded
-
-    - name: Generate Let's Encrypt certificate
-      ansible.builtin.command: >
-        certbot --nginx --non-interactive --agree-tos
-        --email {{ letsencrypt_email }}
-        --domains {{ domain_name }}
-        --redirect
-      register: certbot_result
-      failed_when: certbot_result.rc != 0
-
-    - name: Display certificate generation results
-      ansible.builtin.debug:
-        var: certbot_result.stdout_lines
-
-    - name: Set up automatic certificate renewal
-      ansible.builtin.cron:
-        name: "Renew Let's Encrypt certificates"
-        minute: "0"
-        hour: "12"
-        job: "/usr/bin/certbot renew --quiet"
-
-    # --- Nginx Configuration ---
-    - name: Start and enable nginx
-      ansible.builtin.systemd:
-        name: nginx
-        state: started
-        enabled: yes
-
-    - name: Copy nginx configuration
-      ansible.builtin.copy:
-        src: ../nginx/nginx.conf
-        dest: /etc/nginx/sites-available/default
-        owner: root
-        group: root
-        mode: "0644"
-        backup: yes
-
-    - name: Copy HTML files to web directory
-      ansible.builtin.copy:
-        src: ../nginx/html/
-        dest: /var/www/html/
-        owner: www-data
-        group: www-data
-        mode: "0644"
-        backup: yes
-
-    - name: Test nginx configuration
-      ansible.builtin.command: nginx -t
-      register: nginx_test
-      failed_when: nginx_test.rc != 0
-
-    - name: Reload nginx
-      ansible.builtin.systemd:
-        name: nginx
-        state: reloaded
-      when: nginx_test.rc == 0
-
-    # --- Microservices Directory Setup ---
     - name: Create microservices directory
       ansible.builtin.file:
         path: /opt/microservices
@@ -340,7 +218,6 @@
         - logs.sh
         - remove.sh
 
-    # --- Docker Installation ---
     - name: Create directory for Docker GPG key
       ansible.builtin.file:
         path: /etc/apt/keyrings
@@ -395,7 +272,41 @@
         append: yes
       when: ansible_user != 'root'
 
-    - name: Login to GitLab Container Registry with token as both username and password
+    - name: Create certbot directories
+      ansible.builtin.file:
+        path: "/opt/microservices/certbot/{{ item }}"
+        state: directory
+        mode: "0755"
+        recurse: true
+      loop:
+        - conf
+
+    - name: Create Cloudflare credentials file for Certbot
+      ansible.builtin.copy:
+        dest: /opt/microservices/certbot/cloudflare.ini
+        content: |
+          dns_cloudflare_api_token = {{ cloudflare_api_token }}
+        mode: "0600"
+
+    - name: Generate TLS certificates with Certbot using DNS (Cloudflare)
+      ansible.builtin.shell: |
+        docker run --rm \
+          -v /opt/microservices/certbot/conf:/etc/letsencrypt \
+          -v /opt/microservices/certbot/cloudflare.ini:/cloudflare.ini \
+          certbot/dns-cloudflare certonly \
+          --dns-cloudflare \
+          --dns-cloudflare-credentials /cloudflare.ini \
+          --dns-cloudflare-propagation-seconds 30 \
+          -d {{ domain_name }} \
+          --email {{ letsencrypt_email }} \
+          --agree-tos --no-eff-email \
+          --non-interactive
+      args:
+        creates: /opt/microservices/certbot/conf/live/{{ domain_name }}/fullchain.pem
+      register: certbot_result
+      changed_when: "'Congratulations!' in certbot_result.stdout"
+
+    - name: Login to GitLab Container Registry
       ansible.builtin.shell: |
         echo "{{ gitlab_token }}" | docker login registry.gitlab.com -u "{{ gitlab_token }}" --password-stdin
       no_log: true
@@ -410,7 +321,6 @@
       register: swarm_init_result
       changed_when: "'Swarm initialized' in swarm_init_result.stdout"
 
-    # --- Docker Secrets Management ---
     - name: Check existing Docker secrets
       ansible.builtin.shell: docker secret ls --format '{{ "{{.Name}}" }}'
       register: existing_secrets
@@ -451,7 +361,6 @@
       when: "'smtp_password' not in existing_secrets.stdout_lines"
       no_log: true
 
-    # --- Shell Customization ---
     - name: Download Starship installation script
       ansible.builtin.get_url:
         url: https://starship.rs/install.sh
@@ -474,7 +383,6 @@
             eval "$(starship init bash)"
           fi
 
-    # --- HELIX --- #
     - name: Add Helix PPA
       ansible.builtin.apt_repository:
         repo: ppa:maveonair/helix-editor

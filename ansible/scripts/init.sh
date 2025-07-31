@@ -5,7 +5,7 @@ PROJECT_ROOT="$(dirname "$0")/../.."
 TERRAFORM_DIR="$PROJECT_ROOT/terraform"
 ANSIBLE_DIR="$PROJECT_ROOT/ansible"
 INVENTORY_FILE="$ANSIBLE_DIR/inventory.ini"
-SSH_PORT=1309
+source "$ANSIBLE_DIR/.env"
 
 # Generate inventory.ini
 echo "[servers]" > "$INVENTORY_FILE"
@@ -22,6 +22,6 @@ ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook \
     -i "$INVENTORY_FILE" \
     --private-key ~/.ssh/id_ed25519 \
     -u root \
-    "$ANSIBLE_DIR/init_playbook.yml" \
+    "$ANSIBLE_DIR/playbook.yml" \
     --ask-vault-pass \
     -e ssh_port=$SSH_PORT
