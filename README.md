@@ -1,5 +1,8 @@
 # Healthcare Microservices Infrastructure
 Containerized microservices platform deployed on DigitalOcean with SSL termination and load balancing.
+
+---
+
 **🌐 Live at: https://fhard.khoa.email**
 
 ## Stack
@@ -30,6 +33,7 @@ Services APIs
       ↓
   PostgreSQL
 ```
+---
 
 ## Project Structure
 ```
