@@ -104,6 +104,39 @@
         mode: "0600"
         remote_src: yes
 
+    - name: Download Starship installation script
+      ansible.builtin.get_url:
+        url: https://starship.rs/install.sh
+        dest: /tmp/starship_install.sh
+        mode: "0755"
+
+    - name: Install Starship
+      ansible.builtin.shell: /tmp/starship_install.sh --yes
+      args:
+        creates: /usr/local/bin/starship
+
+    - name: Add Starship to bash profile for all users
+      ansible.builtin.blockinfile:
+        path: /etc/profile.d/starship.sh
+        create: yes
+        mode: "0755"
+        block: |
+          # Initialize Starship prompt
+          if command -v starship >/dev/null 2>&1; then
+            eval "$(starship init bash)"
+          fi
+
+    - name: Add Helix PPA
+      ansible.builtin.apt_repository:
+        repo: ppa:maveonair/helix-editor
+        state: present
+
+    - name: Install Helix
+      ansible.builtin.apt:
+        name: helix
+        state: present
+        update_cache: yes
+
     - name: Disable ssh.socket
       ansible.builtin.systemd:
         name: ssh.socket
@@ -174,22 +207,6 @@
     - name: Enable UFW
       community.general.ufw:
         state: enabled
-
-    - name: Create scripts directory
-      ansible.builtin.file:
-        path: /opt/scripts
-        state: directory
-        owner: root
-        group: root
-        mode: "0755"
-
-    - name: Copy all scripts to server
-      ansible.builtin.copy:
-        src: ../scripts/
-        dest: /opt/scripts/
-        owner: root
-        group: root
-        mode: "0755"
 
     - name: Create microservices directory
       ansible.builtin.file:
@@ -361,36 +378,3 @@
       ansible.builtin.shell: echo "{{ smtp_password }}" | docker secret create smtp_password -
       when: "'smtp_password' not in existing_secrets.stdout_lines"
       no_log: true
-
-    - name: Download Starship installation script
-      ansible.builtin.get_url:
-        url: https://starship.rs/install.sh
-        dest: /tmp/starship_install.sh
-        mode: "0755"
-
-    - name: Install Starship
-      ansible.builtin.shell: /tmp/starship_install.sh --yes
-      args:
-        creates: /usr/local/bin/starship
-
-    - name: Add Starship to bash profile for all users
-      ansible.builtin.blockinfile:
-        path: /etc/profile.d/starship.sh
-        create: yes
-        mode: "0755"
-        block: |
-          # Initialize Starship prompt
-          if command -v starship >/dev/null 2>&1; then
-            eval "$(starship init bash)"
-          fi
-
-    - name: Add Helix PPA
-      ansible.builtin.apt_repository:
-        repo: ppa:maveonair/helix-editor
-        state: present
-
-    - name: Install Helix
-      ansible.builtin.apt:
-        name: helix
-        state: present
-        update_cache: yes
