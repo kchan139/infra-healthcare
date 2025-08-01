@@ -14,8 +14,6 @@ services:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./nginx/html:/var/www/html:ro
       - ./nginx/wait-for-dns.sh:/wait-for-dns.sh:ro
-      - ./certbot/conf:/etc/letsencrypt
-      - ./certbot/www:/var/www/certbot
     entrypoint: ["sh", "/wait-for-dns.sh"]
     networks:
       - microservices-network
@@ -206,10 +204,6 @@ networks:
   microservices-network:
     driver: overlay
     attachable: true
-
-volumes:
-  nginx_config:
-    external: true
 
 secrets:
   db_password:

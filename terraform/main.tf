@@ -40,7 +40,7 @@ data "digitalocean_ssh_key" "khoa" {
 resource "cloudflare_dns_record" "microservices_subdomain" {
   zone_id = var.cloudflare_zone_id
   // --- SUB DOMAIN NAME --- //
-  name    = "api"
+  name    = "fhard"
   type    = "A"
   content = digitalocean_loadbalancer.nodes.ip
   ttl     = 1
@@ -86,6 +86,12 @@ resource "digitalocean_firewall" "nodes" {
 
   inbound_rule {
     protocol         = "tcp"
+    port_range       = "22"
+    source_addresses = ["0.0.0.0/0", "::/0"]
+  }
+
+  inbound_rule {
+    protocol         = "tcp"
     port_range       = "1309"
     source_addresses = ["0.0.0.0/0", "::/0"]
   }
@@ -109,7 +115,7 @@ resource "digitalocean_firewall" "nodes" {
 
   outbound_rule {
     protocol              = "tcp"
-    port_range            = "53"
+    port_range            = "1-65535"
     destination_addresses = ["0.0.0.0/0", "::/0"]
   }
 

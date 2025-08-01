@@ -3,13 +3,13 @@ variable "khoa_ssh_public_key" {
   type        = string
 }
 
-variable "domain_name" {
-  description = "Domain Name for the Load Balancer"
+variable "anh_ssh_public_key" {
+  description = "Tieu Anh's SSH Public Key"
   type        = string
 }
 
-variable "anh_ssh_public_key" {
-  description = "Tieu Anh's SSH Public Key"
+variable "domain_name" {
+  description = "Domain Name for the Load Balancer"
   type        = string
 }
 
