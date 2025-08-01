@@ -272,39 +272,40 @@
         append: yes
       when: ansible_user != 'root'
 
-    - name: Create certbot directories
-      ansible.builtin.file:
-        path: "/opt/microservices/certbot/{{ item }}"
-        state: directory
-        mode: "0755"
-        recurse: true
-      loop:
-        - conf
+    # - name: Create certbot directories
+    #   ansible.builtin.file:
+    #     path: "/opt/microservices/certbot/{{ item }}"
+    #     state: directory
+    #     mode: "0755"
+    #     recurse: true
+    #   loop:
+    #     - conf
+    #     - www
 
-    - name: Create Cloudflare credentials file for Certbot
-      ansible.builtin.copy:
-        dest: /opt/microservices/certbot/cloudflare.ini
-        content: |
-          dns_cloudflare_api_token = {{ cloudflare_api_token }}
-        mode: "0600"
+    # - name: Create Cloudflare credentials file for Certbot
+    #   ansible.builtin.copy:
+    #     dest: /opt/microservices/certbot/cloudflare.ini
+    #     content: |
+    #       dns_cloudflare_api_token = {{ cloudflare_api_token }}
+    #     mode: "0600"
 
-    - name: Generate TLS certificates with Certbot using DNS (Cloudflare)
-      ansible.builtin.shell: |
-        docker run --rm \
-          -v /opt/microservices/certbot/conf:/etc/letsencrypt \
-          -v /opt/microservices/certbot/cloudflare.ini:/cloudflare.ini \
-          certbot/dns-cloudflare certonly \
-          --dns-cloudflare \
-          --dns-cloudflare-credentials /cloudflare.ini \
-          --dns-cloudflare-propagation-seconds 30 \
-          -d {{ domain_name }} \
-          --email {{ letsencrypt_email }} \
-          --agree-tos --no-eff-email \
-          --non-interactive
-      args:
-        creates: /opt/microservices/certbot/conf/live/{{ domain_name }}/fullchain.pem
-      register: certbot_result
-      changed_when: "'Congratulations!' in certbot_result.stdout"
+    # - name: Generate TLS certificates with Certbot using DNS (Cloudflare)
+    #   ansible.builtin.shell: |
+    #     docker run --rm \
+    #       -v /opt/microservices/certbot/conf:/etc/letsencrypt \
+    #       -v /opt/microservices/certbot/cloudflare.ini:/cloudflare.ini \
+    #       certbot/dns-cloudflare certonly \
+    #       --dns-cloudflare \
+    #       --dns-cloudflare-credentials /cloudflare.ini \
+    #       --dns-cloudflare-propagation-seconds 30 \
+    #       -d {{ domain_name }} \
+    #       --email {{ letsencrypt_email }} \
+    #       --agree-tos --no-eff-email \
+    #       --non-interactive
+    #   args:
+    #     creates: /opt/microservices/certbot/conf/live/{{ domain_name }}/fullchain.pem
+    #   register: certbot_result
+    #   changed_when: "'Congratulations!' in certbot_result.stdout"
 
     - name: Login to GitLab Container Registry
       ansible.builtin.shell: |

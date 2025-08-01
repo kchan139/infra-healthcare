@@ -47,16 +47,27 @@ resource "cloudflare_dns_record" "microservices_subdomain" {
   proxied = true
 }
 
+resource "digitalocean_certificate" "cert" {
+  name             = "origin-cert"
+  private_key      = file("${path.module}/secrets/origin.key")
+  leaf_certificate = file("${path.module}/secrets/origin.crt")
+}
+
 resource "digitalocean_loadbalancer" "nodes" {
   name   = "nodes-load-balancer"
   region = "sgp1"
 
+  redirect_http_to_https = true
+
   forwarding_rule {
-    entry_port     = 80
-    entry_protocol = "http"
+    entry_port     = 443
+    entry_protocol = "https"
 
     target_port     = 80
     target_protocol = "http"
+
+    certificate_name = digitalocean_certificate.cert.name
+    tls_passthrough  = false
   }
 
   healthcheck {
@@ -66,6 +77,52 @@ resource "digitalocean_loadbalancer" "nodes" {
   }
 
   droplet_ids = digitalocean_droplet.nodes.*.id
+}
+
+resource "digitalocean_firewall" "nodes" {
+  name = "only-ssh-http-and-https"
+
+  droplet_ids = digitalocean_droplet.nodes.*.id
+
+  inbound_rule {
+    protocol         = "tcp"
+    port_range       = "1309"
+    source_addresses = ["0.0.0.0/0", "::/0"]
+  }
+
+  inbound_rule {
+    protocol                  = "tcp"
+    port_range                = "80"
+    source_load_balancer_uids = [digitalocean_loadbalancer.nodes.id]
+  }
+
+  # inbound_rule {
+  #   protocol         = "tcp"
+  #   port_range       = "443"
+  #   source_addresses = ["0.0.0.0/0", "::/0"]
+  # }
+
+  inbound_rule {
+    protocol         = "icmp"
+    source_addresses = ["0.0.0.0/0", "::/0"]
+  }
+
+  outbound_rule {
+    protocol              = "tcp"
+    port_range            = "53"
+    destination_addresses = ["0.0.0.0/0", "::/0"]
+  }
+
+  outbound_rule {
+    protocol              = "udp"
+    port_range            = "1-65535"
+    destination_addresses = ["0.0.0.0/0", "::/0"]
+  }
+
+  outbound_rule {
+    protocol              = "icmp"
+    destination_addresses = ["0.0.0.0/0", "::/0"]
+  }
 }
 
 resource "digitalocean_droplet" "nodes" {
@@ -80,11 +137,6 @@ resource "digitalocean_droplet" "nodes" {
     data.digitalocean_ssh_key.khoa.id,
     # data.digitalocean_ssh_key.anh.id,
   ]
-
-  # provisioner "local-exec" {
-  #   command = "sleep 30 && ../ansible/scripts/init.sh ${self.ipv4_address}"
-  #   when    = create
-  # }
 
   backups = false
   # backups = true
