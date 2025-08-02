@@ -378,3 +378,18 @@
       ansible.builtin.shell: echo "{{ smtp_password }}" | docker secret create smtp_password -
       when: "'smtp_password' not in existing_secrets.stdout_lines"
       no_log: true
+
+    - name: Create Docker secret 'mongodb_uri' if not exists
+      ansible.builtin.shell: echo "{{ mongodb_uri }}" | docker secret create mongodb_uri -
+      when: "'mongodb_uri' not in existing_secrets.stdout_lines"
+      no_log: true
+
+    - name: Create Docker secret 'rabbitmq_username' if not exists
+      ansible.builtin.shell: echo "{{ rabbitmq_username }}" | docker secret create rabbitmq_username -
+      when: "'rabbitmq_username' not in existing_secrets.stdout_lines"
+      no_log: true
+
+    - name: Create Docker secret 'rabbitmq_password' if not exists
+      ansible.builtin.shell: echo "{{ rabbitmq_password }}" | docker secret create rabbitmq_password -
+      when: "'rabbitmq_password' not in existing_secrets.stdout_lines"
+      no_log: true

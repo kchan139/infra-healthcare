@@ -52,6 +52,9 @@ services:
         export SPRING_DATASOURCE_USERNAME=$$(cat /run/secrets/db_username) &&
         export SPRING_MAIL_USERNAME=$$(cat /run/secrets/smtp_username) &&
         export SPRING_MAIL_PASSWORD=$$(cat /run/secrets/smtp_password) &&
+        export SPRING_DATA_MONGODB_URI=$$(cat /run/secrets/mongodb_uri) &&
+        export SPRING_RABBITMQ_USERNAME=$$(cat /run/secrets/rabbitmq_username) &&
+        export SPRING_RABBITMQ_PASSWORD=$$(cat /run/secrets/rabbitmq_password) &&
         exec java -XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0
         -XX:+UseG1GC -XX:+UseStringDeduplication -Djava.security.egd=file:/dev/./urandom
         -jar app.jar
@@ -219,4 +222,10 @@ secrets:
   smtp_username:
     external: true
   smtp_password:
+    external: true
+  mongodb_uri:
+    external: true
+  rabbitmq_username:
+    external: true
+  rabbitmq_password:
     external: true
