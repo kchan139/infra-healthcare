@@ -6,8 +6,8 @@ Containerized microservices platform deployed on DigitalOcean with SSL terminati
 **🌐 Live at: https://fhard.khoa.email**
 
 ## Stack
-- **Terraform**: Ubuntu droplets, SSH keys, load balancer, firewall, SSL certificates, DNS
-- **Ansible**: Docker Swarm setup, security hardening, user + docker secrets management
+- **Terraform**: Provisions Ubuntu droplets, SSH keys, load balancer, firewall rules, SSL certs, and DNS records
+- **Ansible**: Sets up Docker Swarm, applies security hardening, and manages users and Docker secrets
 - **Cloudflare**: DNS management with CDN proxy
 - **DigitalOcean Load Balancer**: SSL termination and traffic distribution
 - **Nginx**: Reverse proxy with path-based routing
@@ -15,9 +15,10 @@ Containerized microservices platform deployed on DigitalOcean with SSL terminati
 
 ## Architecture
 **Full System:**
-- **Frontend**: Deployed on Netlify (managed by FE team)
-- **Backend**: This infrastructure (IAM + Patient + Test Order services)
-- **Database**: DigitalOcean Managed PostgreSQL (managed by BE team)
+- **Frontend**: Deployed on Netlify (handled by FE team)
+- **Backend**: *This infrastructure* (IAM + Patient + Test Order services)
+- **Databases**: DigitalOcean Managed PostgreSQL, MongoDB Atlas
+- **Message Broker**: RabbitMQ via CloudAMQP
 
 **Traffic Flow:**
 ```
@@ -31,7 +32,7 @@ Load Balancer
       ↓
 Services APIs
       ↓
-  PostgreSQL
+Databases, Message Broker
 ```
 ---
 
@@ -63,12 +64,12 @@ Services APIs
 ## Security & Reliability
 **Security:**
 - Custom SSH port with key-based authentication only
-- DigitalOcean firewall: SSH, HTTP from load balancer only
+- DigitalOcean firewall: allows SSH from all IPs, HTTP only from the load balancer
 - UFW firewall with additional port restrictions
 - Load balancer handles SSL termination and traffic filtering
-- Nginx blocks sensitive endpoints and shady user-agents
+- Nginx blocks sensitive endpoints
 - Docker secrets for credentials
-- No source code on server
+- No source code on server (container images only)
 
 **High Availability (sort of):**
 - 2 replicas per service with health checks
