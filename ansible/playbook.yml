@@ -393,3 +393,8 @@
       ansible.builtin.shell: echo "{{ rabbitmq_password }}" | docker secret create rabbitmq_password -
       when: "'rabbitmq_password' not in existing_secrets.stdout_lines"
       no_log: true
+
+    - name: Create Docker secret 'jwt_secret' if not exists
+      ansible.builtin.shell: echo "{{ jwt_secret }}" | docker secret create jwt_secret -
+      when: "'jwt_secret' not in existing_secrets.stdout_lines"
+      no_log: true

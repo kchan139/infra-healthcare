@@ -106,6 +106,7 @@ services:
       - mongodb_uri
       - rabbitmq_username
       - rabbitmq_password
+      - jwt_secret
     entrypoint:
       - sh
       - -c
@@ -116,6 +117,7 @@ services:
         export SPRING_DATA_MONGODB_URI=$$(cat /run/secrets/mongodb_uri) && \
         export SPRING_RABBITMQ_USERNAME=$$(cat /run/secrets/rabbitmq_username) && \
         export SPRING_RABBITMQ_PASSWORD=$$(cat /run/secrets/rabbitmq_password) && \
+        export JWT_SECRET=$$(cat /run/secrets/jwt_secret) && \ 
         exec java -XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -XX:+UseG1GC -XX:+UseStringDeduplication -Djava.security.egd=file:/dev/./urandom -jar app.jar
     deploy:
       replicas: 2
@@ -165,6 +167,7 @@ services:
       - mongodb_uri
       - rabbitmq_username
       - rabbitmq_password
+      - jwt_secret
     entrypoint:
       - sh
       - -c
@@ -175,6 +178,7 @@ services:
         export SPRING_DATA_MONGODB_URI=$$(cat /run/secrets/mongodb_uri) && \
         export SPRING_RABBITMQ_USERNAME=$$(cat /run/secrets/rabbitmq_username) && \
         export SPRING_RABBITMQ_PASSWORD=$$(cat /run/secrets/rabbitmq_password) && \
+        export JWT_SECRET=$$(cat /run/secrets/jwt_secret) && \ 
         exec java -XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -XX:+UseG1GC -XX:+UseStringDeduplication -Djava.security.egd=file:/dev/./urandom -jar app.jar
     deploy:
       replicas: 2
@@ -236,4 +240,6 @@ secrets:
   rabbitmq_username:
     external: true
   rabbitmq_password:
+    external: true
+  jwt_secret:
     external: true
