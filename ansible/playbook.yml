@@ -282,12 +282,11 @@
         state: started
         enabled: yes
 
-    - name: Add current user to docker group
+    - name: Add khoa user to docker group
       ansible.builtin.user:
-        name: "{{ ansible_user }}"
+        name: khoa
         groups: docker
         append: yes
-      when: ansible_user != 'root'
 
     # - name: Create certbot directories
     #   ansible.builtin.file:
@@ -354,9 +353,9 @@
       when: "'db_username' not in existing_secrets.stdout_lines"
       no_log: true
 
-    - name: Create Docker secret 'db_url' (IAM service) if not exists
-      ansible.builtin.shell: echo "{{ iam_db_url }}" | docker secret create db_url -
-      when: "'db_url' not in existing_secrets.stdout_lines"
+    - name: Create Docker secret 'iam_db_url' (IAM service) if not exists
+      ansible.builtin.shell: echo "{{ iam_db_url }}" | docker secret create iam_db_url -
+      when: "'iam_db_url' not in existing_secrets.stdout_lines"
       no_log: true
 
     - name: Create Docker secret 'patient_db_url' if not exists
@@ -384,14 +383,9 @@
       when: "'mongodb_uri' not in existing_secrets.stdout_lines"
       no_log: true
 
-    - name: Create Docker secret 'rabbitmq_username' if not exists
-      ansible.builtin.shell: echo "{{ rabbitmq_username }}" | docker secret create rabbitmq_username -
-      when: "'rabbitmq_username' not in existing_secrets.stdout_lines"
-      no_log: true
-
-    - name: Create Docker secret 'rabbitmq_password' if not exists
-      ansible.builtin.shell: echo "{{ rabbitmq_password }}" | docker secret create rabbitmq_password -
-      when: "'rabbitmq_password' not in existing_secrets.stdout_lines"
+    - name: Create Docker secret 'rabbitmq_uri' if not exists
+      ansible.builtin.shell: echo "{{ rabbitmq_uri}}" | docker secret create rabbitmq_uri -
+      when: "'rabbitmq_uri' not in existing_secrets.stdout_lines"
       no_log: true
 
     - name: Create Docker secret 'jwt_secret' if not exists

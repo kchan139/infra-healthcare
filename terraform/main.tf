@@ -42,7 +42,7 @@ data "digitalocean_ssh_key" "khoa" {
 resource "digitalocean_droplet" "nodes" {
   count  = 1
   image  = "ubuntu-24-04-x64"
-  name   = "nodes-${count.index + 1}"
+  name   = "node-${count.index + 1}"
   region = "sgp1"
   size   = "s-4vcpu-8gb-intel"
   ssh_keys = [
