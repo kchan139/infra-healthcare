@@ -42,22 +42,9 @@ services:
       - db_username
       - smtp_username
       - smtp_password
-    entrypoint:
-      - sh
-      - -c
-      - >
-        export MANAGEMENT_HEALTH_MAIL_ENABLED=false &&
-        export SPRING_DATASOURCE_PASSWORD=$$(cat /run/secrets/db_password) &&
-        export SPRING_DATASOURCE_URL=$$(cat /run/secrets/db_url) &&
-        export SPRING_DATASOURCE_USERNAME=$$(cat /run/secrets/db_username) &&
-        export SPRING_MAIL_USERNAME=$$(cat /run/secrets/smtp_username) &&
-        export SPRING_MAIL_PASSWORD=$$(cat /run/secrets/smtp_password) &&
-        export SPRING_DATA_MONGODB_URI=$$(cat /run/secrets/mongodb_uri) &&
-        export SPRING_RABBITMQ_USERNAME=$$(cat /run/secrets/rabbitmq_username) &&
-        export SPRING_RABBITMQ_PASSWORD=$$(cat /run/secrets/rabbitmq_password) &&
-        exec java -XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0
-        -XX:+UseG1GC -XX:+UseStringDeduplication -Djava.security.egd=file:/dev/./urandom
-        -jar app.jar
+    entrypoint: ["sh", "/scripts/start-iam.sh"]
+    volumes:
+      - ./scripts/start-iam.sh:/scripts/start-iam.sh:ro
     deploy:
       replicas: 2
       restart_policy:
@@ -103,16 +90,9 @@ services:
       - db_password
       - patient_db_url
       - db_username
-    entrypoint:
-      - sh
-      - -c
-      - >
-        export SPRING_DATASOURCE_PASSWORD=$$(cat /run/secrets/db_password) &&
-        export SPRING_DATASOURCE_URL=$$(cat /run/secrets/patient_db_url) &&
-        export SPRING_DATASOURCE_USERNAME=$$(cat /run/secrets/db_username) &&
-        exec java -XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0
-        -XX:+UseG1GC -XX:+UseStringDeduplication -Djava.security.egd=file:/dev/./urandom
-        -jar app.jar
+    entrypoint: ["sh", "/scripts/start-patient.sh"]
+    volumes:
+      - ./scripts/start-patient.sh:/scripts/start-patient.sh:ro
     deploy:
       replicas: 2
       restart_policy:
@@ -158,16 +138,9 @@ services:
       - db_password
       - testorder_db_url
       - db_username
-    entrypoint:
-      - sh
-      - -c
-      - >
-        export SPRING_DATASOURCE_PASSWORD=$$(cat /run/secrets/db_password) &&
-        export SPRING_DATASOURCE_URL=$$(cat /run/secrets/testorder_db_url) &&
-        export SPRING_DATASOURCE_USERNAME=$$(cat /run/secrets/db_username) &&
-        exec java -XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0
-        -XX:+UseG1GC -XX:+UseStringDeduplication -Djava.security.egd=file:/dev/./urandom
-        -jar app.jar
+    entrypoint: ["sh", "/scripts/start-testorder.sh"]
+    volumes:
+      - ./scripts/start-testorder.sh:/scripts/start-testorder.sh:ro
     deploy:
       replicas: 2
       restart_policy:
