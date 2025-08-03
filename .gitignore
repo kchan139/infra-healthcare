@@ -59,6 +59,6 @@ ansible/roles/*
 !ansible/roles/README.md
 
 .env
-ansible/vars/password.yml
 inventory.ini
 secrets
+secrets.*
