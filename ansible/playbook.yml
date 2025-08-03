@@ -77,30 +77,30 @@
       ansible.builtin.timezone:
         name: Asia/Ho_Chi_Minh
 
-    - name: Create non-root user 'khoa'
+    - name: Create non-root user
       ansible.builtin.user:
-        name: khoa
+        name: "{{ server_user }}"
         state: present
         shell: /bin/bash
         create_home: yes
         groups: sudo
         append: yes
-        password: "{{ khoa_password | password_hash('sha512') }}"
+        password: "{{ server_user_password | password_hash('sha512') }}"
 
-    - name: Create .ssh directory for khoa
+    - name: Create .ssh directory for the user
       ansible.builtin.file:
-        path: /home/khoa/.ssh
+        path: "/home/{{ server_user }}/.ssh"
         state: directory
-        owner: khoa
-        group: khoa
+        owner: "{{ server_user }}"
+        group: "{{ server_user }}"
         mode: "0700"
 
-    - name: Copy root's authorized_keys to khoa
+    - name: Copy root's authorized_keys to user
       ansible.builtin.copy:
         src: /root/.ssh/authorized_keys
-        dest: /home/khoa/.ssh/authorized_keys
-        owner: khoa
-        group: khoa
+        dest: "/home/{{ server_user }}/.ssh/authorized_keys"
+        owner: "{{ server_user }}"
+        group: "{{ server_user }}"
         mode: "0600"
         remote_src: yes
 
@@ -286,9 +286,9 @@
         state: started
         enabled: yes
 
-    - name: Add khoa user to docker group
+    - name: Add user to docker group
       ansible.builtin.user:
-        name: khoa
+        name: "{{ server_user }}"
         groups: docker
         append: yes
 
@@ -375,14 +375,24 @@
       when: "'testorder_db_url' not in existing_secrets.stdout_lines"
       no_log: true
 
-    - name: Create Docker secret 'smtp_username' if not exists
-      ansible.builtin.shell: echo "{{ smtp_username }}" | docker secret create smtp_username -
-      when: "'smtp_username' not in existing_secrets.stdout_lines"
+    - name: Create Docker secret 'MAIL_HOST' if not exists
+      ansible.builtin.shell: echo "{{ smtp_host }}" | docker secret create MAIL_HOST -
+      when: "'MAIL_HOST' not in existing_secrets.stdout_lines"
       no_log: true
 
-    - name: Create Docker secret 'smtp_password' if not exists
-      ansible.builtin.shell: echo "{{ smtp_password }}" | docker secret create smtp_password -
-      when: "'smtp_password' not in existing_secrets.stdout_lines"
+    - name: Create Docker secret 'MAIL_PORT' if not exists
+      ansible.builtin.shell: echo "{{ smtp_port }}" | docker secret create MAIL_PORT -
+      when: "'MAIL_PORT' not in existing_secrets.stdout_lines"
+      no_log: true
+
+    - name: Create Docker secret 'MAIL_USERNAME' if not exists
+      ansible.builtin.shell: echo "{{ smtp_username }}" | docker secret create MAIL_USERNAME -
+      when: "'MAIL_USERNAME' not in existing_secrets.stdout_lines"
+      no_log: true
+
+    - name: Create Docker secret 'MAIL_PASSWORD' if not exists
+      ansible.builtin.shell: echo "{{ smtp_password }}" | docker secret create MAIL_PASSWORD -
+      when: "'MAIL_PASSWORD' not in existing_secrets.stdout_lines"
       no_log: true
 
     - name: Create Docker secret 'mongodb_uri' if not exists
