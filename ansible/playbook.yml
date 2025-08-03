@@ -390,9 +390,29 @@
       when: "'mongodb_uri' not in existing_secrets.stdout_lines"
       no_log: true
 
-    - name: Create Docker secret 'rabbitmq_uri' if not exists
-      ansible.builtin.shell: echo "{{ rabbitmq_uri}}" | docker secret create rabbitmq_uri -
-      when: "'rabbitmq_uri' not in existing_secrets.stdout_lines"
+    - name: Create Docker secret 'rabbitmq_host' if not exists
+      ansible.builtin.shell: echo "{{ rabbitmq_host }}" | docker secret create rabbitmq_host -
+      when: "'rabbitmq_host' not in existing_secrets.stdout_lines"
+      no_log: true
+
+    - name: Create Docker secret 'rabbitmq_port' if not exists
+      ansible.builtin.shell: echo "{{ rabbitmq_port }}" | docker secret create rabbitmq_port -
+      when: "'rabbitmq_port' not in existing_secrets.stdout_lines"
+      no_log: true
+
+    - name: Create Docker secret 'rabbitmq_username' if not exists
+      ansible.builtin.shell: echo "{{ rabbitmq_username }}" | docker secret create rabbitmq_username -
+      when: "'rabbitmq_username' not in existing_secrets.stdout_lines"
+      no_log: true
+
+    - name: Create Docker secret 'rabbitmq_password' if not exists
+      ansible.builtin.shell: echo "{{ rabbitmq_password }}" | docker secret create rabbitmq_password -
+      when: "'rabbitmq_password' not in existing_secrets.stdout_lines"
+      no_log: true
+
+    - name: Create Docker secret 'rabbitmq_vhost' if not exists
+      ansible.builtin.shell: echo "{{ rabbitmq_vhost }}" | docker secret create rabbitmq_vhost -
+      when: "'rabbitmq_vhost' not in existing_secrets.stdout_lines"
       no_log: true
 
     - name: Create Docker secret 'jwt_secret' if not exists
