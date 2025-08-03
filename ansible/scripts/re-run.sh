@@ -21,7 +21,7 @@ echo
 ANSIBLE_HOST_KEY_CHECKING=False ansible-playbook \
     -i "$INVENTORY_FILE" \
     --private-key ~/.ssh/id_ed25519 \
-    -u khoa \
+    -u $USER_NAME \
     -e ssh_port=$SSH_PORT \
     "$ANSIBLE_DIR/playbook.yml" \
     --ask-vault-pass \

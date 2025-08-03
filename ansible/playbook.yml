@@ -236,8 +236,6 @@
       loop:
         - cleanup.sh
         - deploy.sh
-        - logs.sh
-        - remove.sh
 
     - name: Create directory for Docker GPG key
       ansible.builtin.file:
@@ -375,24 +373,24 @@
       when: "'testorder_db_url' not in existing_secrets.stdout_lines"
       no_log: true
 
-    - name: Create Docker secret 'MAIL_HOST' if not exists
-      ansible.builtin.shell: echo "{{ smtp_host }}" | docker secret create MAIL_HOST -
-      when: "'MAIL_HOST' not in existing_secrets.stdout_lines"
+    - name: Create Docker secret 'smtp_host' if not exists
+      ansible.builtin.shell: echo "{{ smtp_host }}" | docker secret create smtp_host -
+      when: "'smtp_host' not in existing_secrets.stdout_lines"
       no_log: true
 
-    - name: Create Docker secret 'MAIL_PORT' if not exists
-      ansible.builtin.shell: echo "{{ smtp_port }}" | docker secret create MAIL_PORT -
-      when: "'MAIL_PORT' not in existing_secrets.stdout_lines"
+    - name: Create Docker secret 'smtp_port' if not exists
+      ansible.builtin.shell: echo "{{ smtp_port }}" | docker secret create smtp_port -
+      when: "'smtp_port' not in existing_secrets.stdout_lines"
       no_log: true
 
-    - name: Create Docker secret 'MAIL_USERNAME' if not exists
-      ansible.builtin.shell: echo "{{ smtp_username }}" | docker secret create MAIL_USERNAME -
-      when: "'MAIL_USERNAME' not in existing_secrets.stdout_lines"
+    - name: Create Docker secret 'smtp_username' if not exists
+      ansible.builtin.shell: echo "{{ smtp_username }}" | docker secret create smtp_username -
+      when: "'smtp_username' not in existing_secrets.stdout_lines"
       no_log: true
 
-    - name: Create Docker secret 'MAIL_PASSWORD' if not exists
-      ansible.builtin.shell: echo "{{ smtp_password }}" | docker secret create MAIL_PASSWORD -
-      when: "'MAIL_PASSWORD' not in existing_secrets.stdout_lines"
+    - name: Create Docker secret 'smtp_password' if not exists
+      ansible.builtin.shell: echo "{{ smtp_password }}" | docker secret create smtp_password -
+      when: "'smtp_password' not in existing_secrets.stdout_lines"
       no_log: true
 
     - name: Create Docker secret 'mongodb_uri' if not exists
