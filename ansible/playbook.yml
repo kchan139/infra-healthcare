@@ -5,7 +5,7 @@
   gather_facts: true
 
   vars_files:
-    - vars/password.yml
+    - vars/secrets.yml
 
   pre_tasks:
     - name: Stop and mask automatic update services
