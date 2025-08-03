@@ -8,6 +8,11 @@ variable "anh_ssh_public_key" {
   type        = string
 }
 
+variable "custom_ssh_port" {
+  description = "Custom SSH Port"
+  type        = string
+}
+
 variable "domain_name" {
   description = "Domain Name for the Load Balancer"
   type        = string

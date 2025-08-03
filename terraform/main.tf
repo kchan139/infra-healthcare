@@ -109,7 +109,7 @@ resource "digitalocean_firewall" "nodes" {
 
   inbound_rule {
     protocol         = "tcp"
-    port_range       = "1309"
+    port_range       = var.custom_ssh_port
     source_addresses = ["0.0.0.0/0", "::/0"]
   }
 
