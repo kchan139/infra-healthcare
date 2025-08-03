@@ -92,6 +92,10 @@ resource "digitalocean_loadbalancer" "nodes" {
     path     = "/"
   }
 
+  firewall {
+    allow = var.cloudflare_ipv4
+  }
+
   droplet_ids = digitalocean_droplet.nodes.*.id
 }
 

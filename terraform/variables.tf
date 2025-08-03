@@ -35,3 +35,8 @@ variable "cloudflare_zone_id" {
   type        = string
   sensitive   = true
 }
+
+variable "cloudflare_ipv4" {
+  description = "Cloudflare IPv4 CIDR blocks"
+  type        = list(string)
+}
