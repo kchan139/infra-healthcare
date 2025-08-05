@@ -8,7 +8,7 @@ Containerized microservices platform deployed on DigitalOcean with SSL terminati
 
 ## Stack
 
-* **Terraform**: Provisions Ubuntu droplets, SSH keys, load balancer, firewall rules (including Cloudflare IP allowlist), SSL certs, and DNS records
+* **Terraform**: Provisions Ubuntu droplets in private VPC, SSH keys, load balancer, firewall rules, SSL certs, and DNS records
 * **Ansible**: Sets up Docker Swarm, applies security hardening, and manages users and Docker secrets
 * **Cloudflare**: DNS management with CDN proxy and IPv4 CIDR blocks whitelisted at the load balancer
 * **DigitalOcean Load Balancer**: SSL termination, firewall-based filtering, and service routing
@@ -23,6 +23,11 @@ Containerized microservices platform deployed on DigitalOcean with SSL terminati
 * **Backend**: *This infrastructure* (IAM + Patient + Test Order services)
 * **Databases**: DigitalOcean Managed PostgreSQL, MongoDB Atlas
 * **Message Broker**: RabbitMQ via CloudAMQP
+
+**Infrastructure Nodes:**
+- 1 Manager Node - 4vCPU/8GB
+- 1 Worker Node - 2vCPU/4GB (tight budget)
+- Private VPC (10.100.0.0/24)
 
 **Traffic Flow:**
 
@@ -81,14 +86,20 @@ Databases, Message Broker
 * DigitalOcean firewall: allows SSH from all IPs, HTTP only from the load balancer
 * Custom SSH port with key-based authentication only
 * UFW firewall with additional port restrictions
+* VPC-private node communication
 * Nginx blocks sensitive endpoints
 * Docker secrets for credentials
 * No source code on server (container images only)
 
 **High Availability (sort of):**
 
-* 2 replicas per service with health checks
+* 3 replicas per service with health checks
 * Rolling updates with automatic rollback
 * Resource limits and reservations
 * Load balancer health monitoring
-* Limitation: only 1 node (budget constraints)
+
+**Limitations:**
+* Centralized logging not implemented due to time constraints
+* Single worker node due to budget constraints
+* Manual failover required for manager node
+* Basic health checks without detailed metrics
