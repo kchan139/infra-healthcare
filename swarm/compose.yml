@@ -19,11 +19,11 @@ services:
         constraints: [node.role == manager]
       restart_policy:
         condition: on-failure
-    # healthcheck:
-    #   test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost"]
-    #   interval: 30s
-    #   timeout: 10s
-    #   retries: 3
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   iam-service:
     image: registry.gitlab.com/healthcare5314327/microservices/iam-service:latest
@@ -88,7 +88,7 @@ services:
         order: stop-first
       resources:
         limits:
-          cpus: '1.25'
+          cpus: '1'
           memory: 896M
         reservations:
           cpus: '0.5'
