@@ -63,10 +63,10 @@ services:
         export SPRING_RABBITMQ_USERNAME=$$(cat /run/secrets/rabbitmq_username) &&
         export SPRING_RABBITMQ_PASSWORD=$$(cat /run/secrets/rabbitmq_password) &&
         export SPRING_RABBITMQ_VIRTUAL_HOST=$$(cat /run/secrets/rabbitmq_vhost) &&
-        export MAIL_HOST=$$(cat /run/secrets/smtp_host) &&
-        export MAIL_PORT=$$(cat /run/secrets/smtp_port) &&
-        export MAIL_USERNAME=$$(cat /run/secrets/smtp_username) &&
-        export MAIL_PASSWORD=$$(cat /run/secrets/smtp_password) &&
+        export SPRING_MAIL_HOST=$$(cat /run/secrets/smtp_host) &&
+        export SPRING_MAIL_PORT=$$(cat /run/secrets/smtp_port) &&
+        export SPRING_MAIL_USERNAME=$$(cat /run/secrets/smtp_username) &&
+        export SPRING_MAIL_PASSWORD=$$(cat /run/secrets/smtp_password) &&
         exec java -XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -XX:+UseG1GC -XX:+UseStringDeduplication -Djava.security.egd=file:/dev/./urandom -jar app.jar
     deploy:
       replicas: 2
