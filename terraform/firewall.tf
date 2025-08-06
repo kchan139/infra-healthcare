@@ -1,5 +1,5 @@
 resource "digitalocean_firewall" "nodes" {
-  name = "only-ssh-http-and-https"
+  name = "droplets-firewall"
 
   droplet_ids = concat(
     [digitalocean_droplet.manager.id],
@@ -10,13 +10,15 @@ resource "digitalocean_firewall" "nodes" {
   inbound_rule {
     protocol         = "tcp"
     port_range       = "22"
-    source_addresses = ["0.0.0.0/0", "::/0"]
+    source_addresses = var.ssh_access_ips
+    # source_addresses = ["0.0.0.0/0", "::/0"]
   }
 
   inbound_rule {
     protocol         = "tcp"
     port_range       = var.custom_ssh_port
-    source_addresses = ["0.0.0.0/0", "::/0"]
+    source_addresses = var.ssh_access_ips
+    # source_addresses = ["0.0.0.0/0", "::/0"]
   }
 
   ### HTTP from Load Balancer ###
@@ -60,7 +62,7 @@ resource "digitalocean_firewall" "nodes" {
     source_addresses = ["0.0.0.0/0", "::/0"]
   }
 
-  ### Outbound Rules (usually left open) ###
+  ### Outbound Rules (Left open for now) ###
   outbound_rule {
     protocol              = "tcp"
     port_range            = "1-65535"

@@ -18,6 +18,11 @@ variable "custom_ssh_port" {
   type        = string
 }
 
+variable "ssh_access_ips" {
+  description = "List of CIDR blocks allowed to access SSH"
+  type        = list(string)
+}
+
 variable "domain_name" {
   description = "Domain name managed by Cloudflare"
   type        = string
