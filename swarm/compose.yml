@@ -17,6 +17,13 @@ services:
       replicas: 1
       placement:
         constraints: [node.role == manager]
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 256MB
+        reservations:
+          cpus: '0.25'
+          memory: 256MB
       restart_policy:
         condition: on-failure
     healthcheck:
@@ -69,7 +76,7 @@ services:
         export SPRING_MAIL_PASSWORD=$$(cat /run/secrets/smtp_password) &&
         exec java -XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -XX:+UseG1GC -XX:+UseStringDeduplication -Djava.security.egd=file:/dev/./urandom -jar app.jar
     deploy:
-      replicas: 2
+      replicas: 3
       restart_policy:
         condition: on-failure
         delay: 10s
@@ -86,13 +93,16 @@ services:
         failure_action: pause
         monitor: 120s
         order: stop-first
+      placement:
+        preferences:
+          - spread: node.hostname
       resources:
         limits:
-          cpus: '1'
-          memory: 896M
+          cpus: '0.5'
+          memory: 1GB
         reservations:
           cpus: '0.5'
-          memory: 640M
+          memory: 1GB
     networks:
       - microservices-network
     healthcheck:
@@ -140,7 +150,7 @@ services:
         export JWT_SECRET=$$(cat /run/secrets/jwt_secret) &&
         exec java -XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -XX:+UseG1GC -XX:+UseStringDeduplication -Djava.security.egd=file:/dev/./urandom -jar app.jar
     deploy:
-      replicas: 2
+      replicas: 3
       restart_policy:
         condition: on-failure
         delay: 10s
@@ -157,13 +167,16 @@ services:
         failure_action: pause
         monitor: 120s
         order: stop-first
+      placement:
+        preferences:
+          - spread: node.hostname
       resources:
         limits:
-          cpus: '0.25'
-          memory: 1.25G
+          cpus: '0.5'
+          memory: 1G
         reservations:
-          cpus: '0.2'
-          memory: 896M
+          cpus: '0.5'
+          memory: 1GB
     networks:
       - microservices-network
     healthcheck:
@@ -211,7 +224,7 @@ services:
         export JWT_SECRET=$$(cat /run/secrets/jwt_secret) &&
         exec java -XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -XX:+UseG1GC -XX:+UseStringDeduplication -Djava.security.egd=file:/dev/./urandom -jar app.jar
     deploy:
-      replicas: 2
+      replicas: 3
       restart_policy:
         condition: on-failure
         delay: 10s
@@ -228,13 +241,16 @@ services:
         failure_action: pause
         monitor: 120s
         order: stop-first
+      placement:
+        preferences:
+          - spread: node.hostname
       resources:
         limits:
-          cpus: '0.375'
-          memory: 1.25G
+          cpus: '0.5'
+          memory: 1G
         reservations:
-          cpus: '0.25'
-          memory: 896M
+          cpus: '0.5'
+          memory: 1GB
     networks:
       - microservices-network
     healthcheck:
