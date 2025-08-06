@@ -26,18 +26,13 @@ services:
           memory: 256MB
       restart_policy:
         condition: on-failure
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
 
   iam-service:
     image: registry.gitlab.com/healthcare5314327/microservices/iam-service:latest
     environment:
       MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: health
       MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS: never
-      SPRING_PROFILES_ACTIVE: dev
+      SPRING_PROFILES_ACTIVE: prod
       SPRING_RABBITMQ_SSL_ENABLED: "true"
       SPRING_RABBITMQ_SSL_ALGORITHM: "TLSv1.2"
       SPRING_RABBITMQ_SSL_VALIDATE_SERVER_CERTIFICATE: "true"
@@ -47,10 +42,9 @@ services:
       - db_password
       - iam_db_url
       - db_username
-      - smtp_host
-      - smtp_port
-      - smtp_username
-      - smtp_password
+      - mailtrap_api_token
+      - mailtrap_sender_email
+      - mailtrap_sender_name
       - mongodb_uri
       - rabbitmq_host
       - rabbitmq_port
@@ -70,10 +64,9 @@ services:
         export SPRING_RABBITMQ_USERNAME=$$(cat /run/secrets/rabbitmq_username) &&
         export SPRING_RABBITMQ_PASSWORD=$$(cat /run/secrets/rabbitmq_password) &&
         export SPRING_RABBITMQ_VIRTUAL_HOST=$$(cat /run/secrets/rabbitmq_vhost) &&
-        export SPRING_MAIL_HOST=$$(cat /run/secrets/smtp_host) &&
-        export SPRING_MAIL_PORT=$$(cat /run/secrets/smtp_port) &&
-        export SPRING_MAIL_USERNAME=$$(cat /run/secrets/smtp_username) &&
-        export SPRING_MAIL_PASSWORD=$$(cat /run/secrets/smtp_password) &&
+        export MAILTRAP_API_TOKEN=$$(cat /run/secrets/mailtrap_api_token) &&
+        export MAILTRAP_SENDER_EMAIL=$$(cat /run/secrets/mailtrap_sender_email) &&
+        export MAILTRAP_SENDER_NAME=$$(cat /run/secrets/mailtrap_sender_name) &&
         exec java -XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -XX:+UseG1GC -XX:+UseStringDeduplication -Djava.security.egd=file:/dev/./urandom -jar app.jar
     deploy:
       replicas: 3
@@ -117,7 +110,7 @@ services:
     environment:
       MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: health
       MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS: never
-      SPRING_PROFILES_ACTIVE: production
+      SPRING_PROFILES_ACTIVE: prod
       LOGGING_LEVEL_ROOT: WARN
       SPRING_RABBITMQ_SSL_ENABLED: "true"
       SPRING_RABBITMQ_SSL_ALGORITHM: "TLSv1.2"
@@ -191,7 +184,7 @@ services:
     environment:
       MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: health
       MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS: never
-      SPRING_PROFILES_ACTIVE: production
+      SPRING_PROFILES_ACTIVE: prod
       LOGGING_LEVEL_ROOT: WARN
       SPRING_RABBITMQ_SSL_ENABLED: "true"
       SPRING_RABBITMQ_SSL_ALGORITHM: "TLSv1.2"
@@ -276,13 +269,11 @@ secrets:
     external: true
   db_username:
     external: true
-  smtp_host:
+  mailtrap_api_token:
     external: true
-  smtp_port:
+  mailtrap_sender_email:
     external: true
-  smtp_username:
-    external: true
-  smtp_password:
+  mailtrap_sender_name:
     external: true
   mongodb_uri:
     external: true

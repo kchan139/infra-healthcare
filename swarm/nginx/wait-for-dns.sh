@@ -3,7 +3,7 @@ set -e
 
 echo "[wait-for-dns] Waiting for services dns to resolve..."
 
-for i in $(seq 1 120); do
+for i in $(seq 1 240); do
   if getent hosts tasks.patient-service > /dev/null; then
     echo "[wait-for-dns] DNS resolved!"
     break
