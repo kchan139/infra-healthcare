@@ -33,27 +33,27 @@ resource "digitalocean_firewall" "nodes" {
   inbound_rule {
     protocol         = "tcp"
     port_range       = "2377"
-    source_addresses = ["10.0.0.0/8"]
+    source_addresses = [digitalocean_vpc.private.ip_range]
   }
 
   # Node discovery
   inbound_rule {
     protocol         = "tcp"
     port_range       = "7946"
-    source_addresses = ["10.0.0.0/8"]
+    source_addresses = [digitalocean_vpc.private.ip_range]
   }
 
   inbound_rule {
     protocol         = "udp"
     port_range       = "7946"
-    source_addresses = ["10.0.0.0/8"]
+    source_addresses = [digitalocean_vpc.private.ip_range]
   }
 
   # Overlay network
   inbound_rule {
     protocol         = "udp"
     port_range       = "4789"
-    source_addresses = ["10.0.0.0/8"]
+    source_addresses = [digitalocean_vpc.private.ip_range]
   }
 
   ### ICMP for Ping ###
