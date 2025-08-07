@@ -7,12 +7,17 @@ resource "digitalocean_firewall" "nodes" {
   )
 
   ### SSH Access ###
-  inbound_rule {
-    protocol         = "tcp"
-    port_range       = "22"
-    source_addresses = var.ssh_access_ips
-    # source_addresses = ["0.0.0.0/0", "::/0"]
-  }
+
+  # Allow SSH on default port from trusted IPs.
+  # This rule is meant for initial Ansible provisioning.
+  # You should lock this port down afterward 
+  # 
+  # inbound_rule {
+  #   protocol         = "tcp"
+  #   port_range       = "22"
+  #   source_addresses = var.ssh_access_ips
+  #   # source_addresses = ["0.0.0.0/0", "::/0"]
+  # }
 
   inbound_rule {
     protocol         = "tcp"

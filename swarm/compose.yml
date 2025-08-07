@@ -42,15 +42,15 @@ services:
       - db_password
       - iam_db_url
       - db_username
-      - mailtrap_api_token
-      - mailtrap_sender_email
-      - mailtrap_sender_name
+      - resend_api_key
       - mongodb_uri
       - rabbitmq_host
       - rabbitmq_port
       - rabbitmq_username
       - rabbitmq_password
       - rabbitmq_vhost
+      - spaces_access_key
+      - spaces_secret_key
     entrypoint:
       - sh
       - -c
@@ -64,9 +64,9 @@ services:
         export SPRING_RABBITMQ_USERNAME=$$(cat /run/secrets/rabbitmq_username) &&
         export SPRING_RABBITMQ_PASSWORD=$$(cat /run/secrets/rabbitmq_password) &&
         export SPRING_RABBITMQ_VIRTUAL_HOST=$$(cat /run/secrets/rabbitmq_vhost) &&
-        export MAILTRAP_API_TOKEN=$$(cat /run/secrets/mailtrap_api_token) &&
-        export MAILTRAP_SENDER_EMAIL=$$(cat /run/secrets/mailtrap_sender_email) &&
-        export MAILTRAP_SENDER_NAME=$$(cat /run/secrets/mailtrap_sender_name) &&
+        export RESEND_API_KEY=$$(cat /run/secrets/resend_api_key) &&
+        export SPACES_ACCESS_KEY=$$(cat /run/secrets/spaces_access_key) &&
+        export SPACES_SECRET_KEY=$$(cat /run/secrets/spaces_secret_key) &&
         exec java -XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -XX:+UseG1GC -XX:+UseStringDeduplication -Djava.security.egd=file:/dev/./urandom -jar app.jar
     deploy:
       replicas: 3
@@ -127,6 +127,7 @@ services:
       - rabbitmq_password
       - rabbitmq_vhost
       - jwt_secret
+      - app_secret_key
     entrypoint:
       - sh
       - -c
@@ -141,6 +142,7 @@ services:
         export SPRING_RABBITMQ_PASSWORD=$$(cat /run/secrets/rabbitmq_password) &&
         export SPRING_RABBITMQ_VIRTUAL_HOST=$$(cat /run/secrets/rabbitmq_vhost) &&
         export JWT_SECRET=$$(cat /run/secrets/jwt_secret) &&
+        export APP_SECRET_KEY=$$(cat /run/secrets/app_secret_key) &&
         exec java -XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -XX:+UseG1GC -XX:+UseStringDeduplication -Djava.security.egd=file:/dev/./urandom -jar app.jar
     deploy:
       replicas: 3
@@ -201,6 +203,7 @@ services:
       - rabbitmq_password
       - rabbitmq_vhost
       - jwt_secret
+      - app_secret_key
     entrypoint:
       - sh
       - -c
@@ -215,6 +218,7 @@ services:
         export SPRING_RABBITMQ_PASSWORD=$$(cat /run/secrets/rabbitmq_password) &&
         export SPRING_RABBITMQ_VIRTUAL_HOST=$$(cat /run/secrets/rabbitmq_vhost) &&
         export JWT_SECRET=$$(cat /run/secrets/jwt_secret) &&
+        export APP_SECRET_KEY=$$(cat /run/secrets/app_secret_key) &&
         exec java -XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0 -XX:+UseG1GC -XX:+UseStringDeduplication -Djava.security.egd=file:/dev/./urandom -jar app.jar
     deploy:
       replicas: 3
@@ -269,11 +273,7 @@ secrets:
     external: true
   db_username:
     external: true
-  mailtrap_api_token:
-    external: true
-  mailtrap_sender_email:
-    external: true
-  mailtrap_sender_name:
+  resend_api_key:
     external: true
   mongodb_uri:
     external: true
@@ -287,5 +287,11 @@ secrets:
     external: true
   rabbitmq_vhost:
     external: true
+  spaces_access_key:
+    external: true
+  spaces_secret_key:
+    external: true
   jwt_secret:
+    external: true
+  app_secret_key:
     external: true

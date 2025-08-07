@@ -1,4 +1,4 @@
-# === Cloudflare DNS Record ===
+# === Cloudflare DNS Records ===
 
 resource "cloudflare_dns_record" "microservices_subdomain" {
   zone_id = var.cloudflare_zone_id
@@ -10,47 +10,34 @@ resource "cloudflare_dns_record" "microservices_subdomain" {
   proxied = true
 }
 
-resource "cloudflare_dns_record" "mt86_verification" {
-  zone_id = var.cloudflare_zone_id
-  name    = "mt86"
-  type    = "CNAME"
-  content = "smtp.mailtrap.live"
-  ttl     = 1
-  proxied = false
+# MX Record
+resource "cloudflare_dns_record" "send_mx" {
+  zone_id  = var.cloudflare_zone_id
+  name     = "send"
+  type     = "MX"
+  content  = "feedback-smtp.ap-northeast-1.amazonses.com"
+  priority = 10
+  ttl      = 1
+  proxied  = false
 }
 
-resource "cloudflare_dns_record" "dkim_1" {
+# SPF Record (TXT)
+resource "cloudflare_dns_record" "send_spf" {
   zone_id = var.cloudflare_zone_id
-  name    = "rwmt1._domainkey"
-  type    = "CNAME"
-  content = "rwmt1.dkim.smtp.mailtrap.live"
-  ttl     = 1
-  proxied = false
-}
-
-resource "cloudflare_dns_record" "dkim_2" {
-  zone_id = var.cloudflare_zone_id
-  name    = "rwmt2._domainkey"
-  type    = "CNAME"
-  content = "rwmt2.dkim.smtp.mailtrap.live"
-  ttl     = 1
-  proxied = false
-}
-
-resource "cloudflare_dns_record" "dmarc" {
-  zone_id = var.cloudflare_zone_id
-  name    = "_dmarc"
+  name    = "send"
   type    = "TXT"
-  content = "\"v=DMARC1; p=none; rua=mailto:dmarc@smtp.mailtrap.live; ruf=mailto:dmarc@smtp.mailtrap.live; rf=afrf; pct=100\""
+  content = "\"v=spf1 include:amazonses.com ~all\""
   ttl     = 1
   proxied = false
 }
 
-resource "cloudflare_dns_record" "mt_link_tracking" {
+# DKIM Record (TXT)
+resource "cloudflare_dns_record" "resend_dkim" {
   zone_id = var.cloudflare_zone_id
-  name    = "mt-link"
-  type    = "CNAME"
-  content = "t.mailtrap.live"
+  name    = "resend._domainkey"
+  type    = "TXT"
+  content = "\"p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCjg1dpEdhjeckK7V+o38zrQJ8cjOMEN91wrgbGqyZ2R8E6l+luBvtDAhQxp8oibAbvFtnw09cUUq7NAmhgUfvYm6gGV8l3jqYT51DaD5bkGYasevseVoxGsxK7+qTmNFrqcQVM86W/7huCTfBop307JG4qeXTZWkYcx9vKWu4UyQIDAQAB\""
   ttl     = 1
   proxied = false
 }
+
