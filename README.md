@@ -83,7 +83,7 @@ Databases, Message Broker
 
 * Load balancer handles SSL termination and traffic filtering
 * Load balancer firewall only allows Cloudflare IPv4 ranges
-* DigitalOcean firewall: allows SSH from all IPs, HTTP only from the load balancer
+* DigitalOcean firewall: allows SSH from trusted IPs, HTTP only from the load balancer
 * Custom SSH port with key-based authentication only
 * UFW firewall with additional port restrictions
 * VPC-private node communication
