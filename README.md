@@ -4,7 +4,7 @@ Containerized microservices platform deployed on DigitalOcean with SSL terminati
 
 ---
 
-**🌐 Live at: [https://fhard.khoa.email](https://fhard.khoa.email)**
+<!-- **🌐 Live at: [https://fhard.khoa.email](https://fhard.khoa.email)** -->
 
 ## Stack
 
@@ -61,7 +61,7 @@ Databases, Message Broker
 ### Prerequisites
 
 * DigitalOcean and Cloudflare API tokens set in `terraform/terraform.tfvars` (see `variables.tf` for required vars)
-* Ansible vault (`ansible/vars/password.yml`) for secrets
+* Ansible vault (`ansible/vars/secrets.yml`) for secrets
 * SSH keys configured
 
 ### Steps
