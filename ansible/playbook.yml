@@ -10,48 +10,47 @@
       register: docker_info_result
 
 # === Manager Setup ===
+- name: Initialize Swarm on manager node
+  hosts: manager
+  become: true
+  tasks:
+    - name: Initialize Docker Swarm
+      ansible.builtin.command: docker swarm init --advertise-addr {{ ansible_eth1.ipv4.address }}
+      # --advertise-addr {{ hostvars[inventory_hostname]['ansible_all_ipv4_addresses'] | select('match', '10.100.*') | first }}
+      register: swarm_init_result
+      changed_when: "'Swarm initialized' in swarm_init_result.stdout"
+      failed_when: >
+        swarm_init_result.rc != 0 and
+        'already part of a swarm' not in swarm_init_result.stderr
 
-# - name: Initialize Swarm on manager node
-#   hosts: manager
-#   become: true
-#   tasks:
-#     - name: Initialize Docker Swarm
-#       ansible.builtin.command: docker swarm init --advertise-addr {{ ansible_default_ipv4.address }}
-#       register: swarm_init_result
-#       changed_when: "'Swarm initialized' in swarm_init_result.stdout"
-#       failed_when: >
-#         {{ swarm_init_result.rc != 0 and
-#            'already part of a swarm' not in swarm_init_result.stderr }}
+    - name: Get Swarm worker join token
+      ansible.builtin.command: docker swarm join-token -q worker
+      register: swarm_worker_token
 
-#     - name: Get Swarm worker join token
-#       ansible.builtin.command: docker swarm join-token -q worker
-#       register: swarm_worker_token
+# === Workers Setup ===
+- name: Join Swarm on worker nodes
+  hosts: workers
+  become: true
+  tasks:
+    - name: Set swarm worker token from manager
+      ansible.builtin.set_fact:
+        swarm_worker_token: "{{ hostvars[groups['manager'][0]].swarm_worker_token.stdout }}"
 
-# # === Workers Setup ===
+    - name: Check if node is already part of a swarm
+      ansible.builtin.shell: |
+        docker info --format '{{ "{{.Swarm.LocalNodeState}}" }}'
+      register: swarm_state
+      changed_when: false
 
-# - name: Join Swarm on worker nodes
-#   hosts: workers
-#   become: true
-#   tasks:
-#     - name: Set swarm worker token from manager
-#       ansible.builtin.set_fact:
-#         swarm_worker_token: "{{ hostvars[groups['manager'][0]].swarm_worker_token.stdout }}"
-
-#     - name: Check if node is already part of a swarm
-#       ansible.builtin.shell: |
-#         docker info --format '{{ "{{.Swarm.LocalNodeState}}" }}'
-#       register: swarm_state
-#       changed_when: false
-
-#     - name: Join Docker Swarm
-#       ansible.builtin.command: >
-#         docker swarm join --token {{ swarm_worker_token }}
-#         {{ hostvars[groups['manager'][0]].ansible_default_ipv4.address }}:2377
-#       when: swarm_state.stdout.strip() not in ["active", "pending"]
-#       register: swarm_join_result
-#       changed_when: "'This node joined a swarm as a worker' in swarm_join_result.stdout"
-#       failed_when: swarm_join_result.rc != 0 and
-#         'already part of a swarm' not in swarm_join_result.stderr
+    - name: Join Docker Swarm
+      ansible.builtin.command: >
+        docker swarm join --token {{ swarm_worker_token }}
+        {{ hostvars[groups['manager'][0]].ansible_eth1.ipv4.address }}:2377
+      when: swarm_state.stdout.strip() not in ["active", "pending"]
+      register: swarm_join_result
+      changed_when: "'This node joined a swarm as a worker' in swarm_join_result.stdout"
+      failed_when: swarm_join_result.rc != 0 and
+        'already part of a swarm' not in swarm_join_result.stderr
 
 # === Docker Secrets ===
 - name: Create Docker secrets on manager

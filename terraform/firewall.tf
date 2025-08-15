@@ -1,3 +1,5 @@
+# === Cloud Firewall (~ Security Groups) === #
+
 resource "digitalocean_firewall" "nodes" {
   name = "droplets-firewall"
 
@@ -10,8 +12,7 @@ resource "digitalocean_firewall" "nodes" {
 
   # Allow SSH on default port from trusted IPs.
   # This rule is meant for initial Ansible provisioning.
-  # You should lock this port down afterward 
-  # 
+  # You should lock this port down afterward
   # inbound_rule {
   #   protocol         = "tcp"
   #   port_range       = "22"
@@ -64,20 +65,82 @@ resource "digitalocean_firewall" "nodes" {
   ### ICMP for Ping ###
   inbound_rule {
     protocol         = "icmp"
-    source_addresses = ["0.0.0.0/0", "::/0"]
+    source_addresses = var.ssh_access_ips
+    # source_addresses = ["0.0.0.0/0", "::/0"]
   }
 
-  ### Outbound Rules (Left open for now) ###
+  ### Outbound Rules ###
+
+  # DNS Resolution (UDP/TCP)
+  outbound_rule {
+    protocol              = "udp"
+    port_range            = "53"
+    destination_addresses = ["0.0.0.0/0", "::/0"]
+  }
+  outbound_rule {
+    protocol              = "tcp"
+    port_range            = "53"
+    destination_addresses = ["0.0.0.0/0", "::/0"]
+  }
+
+  # NTP Time Sync
+  outbound_rule {
+    protocol              = "udp"
+    port_range            = "123"
+    destination_addresses = ["0.0.0.0/0", "::/0"]
+  }
+
+  # HTTP/HTTPS for package updates and external API calls
+  outbound_rule {
+    protocol              = "tcp"
+    port_range            = "80"
+    destination_addresses = ["0.0.0.0/0", "::/0"]
+  }
+  outbound_rule {
+    protocol              = "tcp"
+    port_range            = "443"
+    destination_addresses = ["0.0.0.0/0", "::/0"]
+  }
+
+  # GitLab Container Registry
+  outbound_rule {
+    protocol              = "tcp"
+    port_range            = "5050"
+    destination_addresses = ["0.0.0.0/0", "::/0"]
+  }
+
+  # DigitalOcean Managed PostgreSQL
+  outbound_rule {
+    protocol              = "tcp"
+    port_range            = "25061"
+    destination_addresses = ["0.0.0.0/0", "::/0"]
+  }
+
+  # MongoDB Atlas
+  outbound_rule {
+    protocol              = "tcp"
+    port_range            = "27017"
+    destination_addresses = ["0.0.0.0/0", "::/0"]
+  }
+
+  # RabbitMQ (AMQP)
+  outbound_rule {
+    protocol              = "tcp"
+    port_range            = "5671"
+    destination_addresses = ["0.0.0.0/0", "::/0"]
+  }
+
+  # Internal VPC communication (all protocols)
   outbound_rule {
     protocol              = "tcp"
     port_range            = "1-65535"
-    destination_addresses = ["0.0.0.0/0", "::/0"]
+    destination_addresses = [digitalocean_vpc.private.ip_range]
   }
 
   outbound_rule {
     protocol              = "udp"
     port_range            = "1-65535"
-    destination_addresses = ["0.0.0.0/0", "::/0"]
+    destination_addresses = [digitalocean_vpc.private.ip_range]
   }
 
   outbound_rule {
